@@ -2,199 +2,160 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#4caf50">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="ปลูกผัก">
-  <meta name="description" content="บันทึกการปลูกผักอินทรีย์สำหรับนักเรียน">
-  <title>บันทึกการปลูกผักอินทรีย์ PWA</title>
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บันทึกผักอินทรีย์ + Firebase</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
-    :root { --primary: #4caf50; --primary-dark: #2e7d32; --danger: #ef5350; --blue: #2196f3; --orange: #ff9800; }
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); min-height: 100vh; min-height: -webkit-fill-available; padding: 8px; padding-bottom: 70px; }
-    .container { max-width: 650px; margin: 0 auto; }
-    h1 { text-align: center; color: var(--primary-dark); font-size: 1.3em; margin-bottom: 2px; }
-    .subtitle { text-align: center; color: #43a047; font-size: 0.7em; margin-bottom: 10px; }
-    .card { background: white; border-radius: 16px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .card h2 { color: var(--primary-dark); font-size: 1em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .form-group { margin-bottom: 10px; }
-    .form-group label { display: block; font-size: 0.75em; color: #555; margin-bottom: 4px; font-weight: 600; }
-    select, input[type="date"], input[type="number"], input[type="text"], textarea { width: 100%; padding: 10px; border: 2px solid #c8e6c9; border-radius: 10px; font-size: 16px; outline: none; transition: border 0.3s; -webkit-appearance: none; }
-    select:focus, input:focus, textarea:focus { border-color: var(--primary); }
-    input.error { border-color: var(--danger); background: #ffebee; }
-    .error-msg { color: #c62828; font-size: 0.7em; margin-top: 2px; }
-    .btn { background: linear-gradient(135deg, #66bb6a, #43a047); color: white; border: none; padding: 12px; border-radius: 12px; font-size: 0.85em; font-weight: bold; cursor: pointer; width: 100%; transition: all 0.3s; touch-action: manipulation; }
-    .btn:hover, .btn:active { box-shadow: 0 4px 15px rgba(76,175,80,0.4); transform: translateY(-1px); }
-    .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
-    .btn-sm { padding: 8px 12px; font-size: 0.75em; width: auto; }
-    .btn-danger { background: linear-gradient(135deg, #ef5350, #c62828); }
-    .btn-blue { background: linear-gradient(135deg, #42a5f5, #1976d2); }
-    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .hidden { display: none !important; }
-    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 4px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
-    .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 12px; border: none; background: transparent; cursor: pointer; color: #888; font-size: 0.65em; border-radius: 12px; transition: all 0.2s; }
-    .nav-btn .icon { font-size: 1.4em; }
-    .nav-btn.active { color: var(--primary); background: #e8f5e9; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .status-card { background: linear-gradient(135deg, #ffd54f, var(--orange)); border-radius: 16px; padding: 14px; color: white; margin-bottom: 10px; }
-    .status-card h2 { color: white; margin-bottom: 4px; font-size: 0.95em; }
-    .status-card p { font-size: 0.8em; opacity: 0.9; }
-    .status-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-    .status-badge { background: rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 12px; font-size: 0.7em; }
-    .phase-card { border-left: 4px solid var(--primary); }
-    .phase-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .phase-title { font-weight: bold; color: var(--primary-dark); font-size: 0.95em; }
-    .phase-badge { background: var(--primary); color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.65em; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-    .phase-desc { color: #666; font-size: 0.8em; margin-bottom: 10px; }
-    .bio-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-    .bio-tag { padding: 4px 10px; border-radius: 12px; font-size: 0.7em; border: 1px solid; }
-    .bio-em { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
-    .bio-tricho { background: #e8f5e9; color: var(--primary-dark); border-color: #a5d6a7; }
-    .bio-beau { background: #fce4ec; color: #c2185b; border-color: #f8bbd9; }
-    .bio-meta { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
-    .bio-hormone { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
-    .checklist { list-style: none; }
-    .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; margin-bottom: 4px; background: #f5f5f5; border-radius: 10px; cursor: pointer; font-size: 0.8em; }
-    .checklist li.done { background: #c8e6c9; }
-    .checklist li.done span { text-decoration: line-through; color: #888; }
-    .checklist input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--primary); flex-shrink: 0; }
-    .progress-wrap { background: #e0e0e0; border-radius: 10px; height: 8px; margin-top: 8px; overflow: hidden; }
-    .progress-bar { height: 100%; background: linear-gradient(90deg, #81c784, var(--primary)); transition: width 0.5s; }
-    .progress-text { display: flex; justify-content: space-between; font-size: 0.7em; color: #666; margin-top: 4px; }
-    .quick-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .quick-btn { padding: 12px 6px; border: none; border-radius: 12px; cursor: pointer; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .quick-btn.done { background: var(--primary); color: white; }
-    .quick-btn .icon { font-size: 1.3em; }
-    .quick-btn .label { font-size: 0.65em; font-weight: 600; }
-    .quick-btn .time { font-size: 0.55em; opacity: 0.8; }
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
-    .stat-box { background: #f5f5f5; padding: 10px 6px; border-radius: 12px; }
-    .stat-box.green { background: #e8f5e9; }
-    .stat-box.blue { background: #e3f2fd; }
-    .stat-box.purple { background: #f3e5f5; }
-    .stat-box.orange { background: #fff3e0; }
-    .stat-value { font-size: 1.4em; font-weight: bold; color: #333; }
-    .stat-label { font-size: 0.55em; color: #888; }
-    .timeline-item { display: flex; gap: 10px; margin-bottom: 8px; }
-    .timeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; flex-shrink: 0; }
-    .timeline-dot.done { background: var(--primary); color: white; }
-    .timeline-dot.current { background: #ffd54f; color: #333; box-shadow: 0 0 0 4px rgba(255,213,79,0.3); }
-    .timeline-dot.future { background: #e0e0e0; color: #999; }
-    .timeline-content { flex: 1; padding: 10px; border-radius: 10px; font-size: 0.8em; }
-    .timeline-content.done { background: #e8f5e9; }
-    .timeline-content.current { background: #fffde7; border: 2px solid #ffd54f; }
-    .timeline-content.future { background: #f5f5f5; }
-    .timeline-title { font-weight: 600; color: #333; }
-    .timeline-date { font-size: 0.85em; color: #888; }
-    .timeline-percent { float: right; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
-    .timeline-percent.complete { background: var(--primary); color: white; }
-    .timeline-percent.partial { background: #ffe082; color: #333; }
-    .growth-item { background: #f5f5f5; padding: 10px; border-radius: 10px; margin-bottom: 6px; position: relative; }
-    .growth-header { display: flex; justify-content: space-between; margin-bottom: 4px; padding-right: 30px; }
-    .growth-day { font-weight: bold; color: var(--primary-dark); font-size: 0.85em; }
-    .growth-date { font-size: 0.65em; color: #999; }
-    .growth-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-    .growth-tag { padding: 3px 8px; border-radius: 8px; font-size: 0.7em; }
-    .growth-tag.height { background: #e3f2fd; color: #1565c0; }
-    .growth-tag.leaves { background: #e8f5e9; color: var(--primary-dark); }
-    .growth-tag.problem { background: #ffebee; color: #c62828; }
-    .delete-btn { position: absolute; top: 8px; right: 8px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.9em; display: flex; align-items: center; justify-content: center; }
-    .plot-selector { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
-    .plot-btn { padding: 8px 14px; background: #f5f5f5; border: 2px solid transparent; border-radius: 12px; cursor: pointer; font-size: 0.8em; white-space: nowrap; display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .plot-btn.active { background: var(--primary); color: white; border-color: var(--primary-dark); }
-    .plot-btn .plot-icon { font-size: 1.2em; }
-    .add-plot-btn { background: #e3f2fd; color: #1976d2; border: 2px dashed #90caf9; }
-    .plot-card { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 16px; padding: 14px; color: white; margin-bottom: 10px; }
-    .plot-card .header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .plot-card .icon { font-size: 2em; }
-    .plot-card .title { font-size: 1.1em; font-weight: bold; }
-    .plot-card .dates { font-size: 0.75em; opacity: 0.9; }
-    .plot-card .progress { background: rgba(255,255,255,0.2); border-radius: 10px; padding: 8px; margin-top: 8px; }
-    .plot-card .bar { height: 10px; background: rgba(255,255,255,0.3); border-radius: 5px; overflow: hidden; }
-    .plot-card .fill { height: 100%; background: white; }
-    .plot-card .text { display: flex; justify-content: space-between; font-size: 0.7em; margin-top: 4px; }
-    .chart-container { position: relative; height: 220px; margin: 10px 0; }
-    .warning-box { background: #ffebee; border: 2px solid #ef9a9a; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
-    .warning-box h3 { color: #c62828; font-size: 0.85em; margin-bottom: 8px; }
-    .warning-box ul { list-style: none; font-size: 0.75em; }
-    .warning-box li { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
-    .schedule-table { background: #e8f5e9; border-radius: 12px; padding: 12px; }
-    .schedule-table h3 { color: var(--primary-dark); font-size: 0.85em; margin-bottom: 8px; }
-    .schedule-row { display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 8px; margin-bottom: 4px; font-size: 0.75em; }
-    .schedule-row .time { color: #666; }
-    .schedule-row .action { font-weight: 600; color: var(--primary-dark); }
-    .schedule-row .action.red { color: #c62828; }
-    .veggie-info { display: flex; gap: 10px; align-items: flex-start; }
-    .veggie-icon { font-size: 2.5em; }
-    .veggie-details { flex: 1; }
-    .veggie-name { font-weight: bold; color: var(--primary-dark); font-size: 1em; }
-    .veggie-desc { font-size: 0.75em; color: #666; margin: 4px 0; }
-    .veggie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
-    .veggie-stat { background: #f5f5f5; padding: 6px 8px; border-radius: 8px; font-size: 0.7em; }
-    .veggie-tip { font-size: 0.75em; color: #43a047; margin-top: 8px; }
-    .bio-accordion { border: 2px solid; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
-    .bio-accordion-header { padding: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-    .bio-accordion-header .info { display: flex; align-items: center; gap: 8px; }
-    .bio-accordion-header .icon { font-size: 1.5em; }
-    .bio-accordion-header .name { font-weight: bold; font-size: 0.9em; }
-    .bio-accordion-header .fullname { font-size: 0.65em; opacity: 0.7; }
-    .bio-accordion-header .arrow { font-size: 1em; transition: transform 0.3s; }
-    .bio-accordion.open .arrow { transform: rotate(180deg); }
-    .bio-accordion-body { padding: 0 12px 12px; display: none; }
-    .bio-accordion.open .bio-accordion-body { display: block; }
-    .bio-info-box { background: rgba(255,255,255,0.5); padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 0.75em; }
-    .bio-info-box b { display: block; margin-bottom: 2px; }
-    .bio-info-box ul { margin: 0; padding-left: 16px; }
-    .offline-banner { background: var(--orange); color: white; text-align: center; padding: 8px; font-size: 0.8em; border-radius: 8px; margin-bottom: 10px; display: none; }
-    .offline-banner.show { display: block; }
-    .install-banner { background: linear-gradient(135deg, var(--blue), #1565c0); color: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: none; }
-    .install-banner.show { display: block; }
-    .install-banner .content { display: flex; align-items: center; gap: 10px; }
-    .install-banner .icon { font-size: 2em; }
-    .install-banner .text { flex: 1; }
-    .install-banner h3 { font-size: 0.9em; margin-bottom: 2px; }
-    .install-banner p { font-size: 0.75em; opacity: 0.9; }
-    .install-banner .btns { display: flex; gap: 8px; margin-top: 8px; }
-    .install-banner .btn { padding: 8px 16px; font-size: 0.8em; }
-    .install-banner .btn-outline { background: transparent; border: 2px solid white; }
-    .empty-state { text-align: center; padding: 40px 20px; }
-    .empty-state .icon { font-size: 3em; margin-bottom: 10px; }
-    .empty-state p { color: #888; margin-bottom: 10px; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-    .modal-content { background: white; border-radius: 16px; padding: 20px; max-width: 400px; width: 100%; max-height: 80vh; overflow-y: auto; }
-    .modal-content h2 { color: var(--primary-dark); margin-bottom: 15px; font-size: 1.1em; }
-    .footer { text-align: center; font-size: 0.6em; color: var(--primary); padding: 10px 0; }
-    .sync-status { font-size: 0.7em; padding: 4px 8px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; }
-    .sync-status.online { background: #e8f5e9; color: var(--primary-dark); }
-    .sync-status.offline { background: #fff3e0; color: #e65100; }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Sarabun',sans-serif;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);min-height:100vh;padding:8px;padding-bottom:70px}
+    .container{max-width:650px;margin:0 auto}
+    h1{text-align:center;color:#2e7d32;font-size:1.3em;margin-bottom:2px}
+    .subtitle{text-align:center;color:#43a047;font-size:0.7em;margin-bottom:10px}
+    .card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+    .card h2{color:#2e7d32;font-size:1em;margin-bottom:10px}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .form-group{margin-bottom:10px}
+    .form-group label{display:block;font-size:0.75em;color:#555;margin-bottom:4px;font-weight:600}
+    select,input[type="date"],input[type="number"],input[type="text"]{width:100%;padding:10px;border:2px solid #c8e6c9;border-radius:10px;font-size:14px;outline:none}
+    input:focus,select:focus{border-color:#4caf50}
+    input.error{border-color:#ef5350;background:#ffebee}
+    .error-msg{color:#c62828;font-size:0.7em;margin-top:2px}
+    .btn{background:linear-gradient(135deg,#66bb6a,#43a047);color:#fff;border:none;padding:12px;border-radius:12px;font-size:0.85em;font-weight:700;cursor:pointer;width:100%}
+    .btn:hover{opacity:0.9}
+    .btn-sm{padding:8px 12px;font-size:0.75em;width:auto}
+    .btn-danger{background:linear-gradient(135deg,#ef5350,#c62828)}
+    .btn-blue{background:linear-gradient(135deg,#42a5f5,#1976d2)}
+    .btn-row{display:flex;gap:8px;flex-wrap:wrap}
+    .hidden{display:none!important}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;justify-content:space-around;padding:8px;box-shadow:0 -2px 10px rgba(0,0,0,0.1);z-index:100}
+    .nav-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 12px;border:none;background:0 0;cursor:pointer;color:#888;font-size:0.65em;border-radius:12px}
+    .nav-btn .icon{font-size:1.4em}
+    .nav-btn.active{color:#4caf50;background:#e8f5e9}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .status-card{background:linear-gradient(135deg,#ffd54f,#ff9800);border-radius:16px;padding:14px;color:#fff;margin-bottom:10px}
+    .status-card h2{color:#fff;margin-bottom:4px;font-size:0.95em}
+    .status-card p{font-size:0.8em;opacity:0.9}
+    .status-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+    .status-badge{background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;font-size:0.7em}
+    .phase-card{border-left:4px solid #4caf50}
+    .phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .phase-title{font-weight:700;color:#2e7d32;font-size:0.95em}
+    .phase-badge{background:#4caf50;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.65em}
+    .phase-desc{color:#666;font-size:0.8em;margin-bottom:10px}
+    .bio-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+    .bio-tag{padding:4px 10px;border-radius:12px;font-size:0.7em;border:1px solid}
+    .bio-em{background:#fff3e0;color:#e65100;border-color:#ffcc80}
+    .bio-tricho{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
+    .bio-beau{background:#fce4ec;color:#c2185b;border-color:#f8bbd9}
+    .bio-meta{background:#e3f2fd;color:#1565c0;border-color:#90caf9}
+    .bio-hormone{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8}
+    .checklist{list-style:none}
+    .checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:4px;background:#f5f5f5;border-radius:10px;cursor:pointer;font-size:0.8em}
+    .checklist li.done{background:#c8e6c9}
+    .checklist li.done span{text-decoration:line-through;color:#888}
+    .checklist input[type="checkbox"]{width:20px;height:20px;accent-color:#4caf50}
+    .progress-wrap{background:#e0e0e0;border-radius:10px;height:8px;margin-top:8px;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#81c784,#4caf50)}
+    .progress-text{display:flex;justify-content:space-between;font-size:0.7em;color:#666;margin-top:4px}
+    .quick-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .quick-btn{padding:12px 6px;border:none;border-radius:12px;cursor:pointer;background:#f0f0f0;display:flex;flex-direction:column;align-items:center;gap:4px}
+    .quick-btn.done{background:#4caf50;color:#fff}
+    .quick-btn .icon{font-size:1.3em}
+    .quick-btn .label{font-size:0.65em;font-weight:600}
+    .quick-btn .time{font-size:0.55em;opacity:0.8}
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+    .stat-box{background:#f5f5f5;padding:10px 6px;border-radius:12px}
+    .stat-box.green{background:#e8f5e9}
+    .stat-box.blue{background:#e3f2fd}
+    .stat-box.purple{background:#f3e5f5}
+    .stat-box.orange{background:#fff3e0}
+    .stat-value{font-size:1.4em;font-weight:700;color:#333}
+    .stat-label{font-size:0.55em;color:#888}
+    .timeline-item{display:flex;gap:10px;margin-bottom:8px}
+    .timeline-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:700;flex-shrink:0}
+    .timeline-dot.done{background:#4caf50;color:#fff}
+    .timeline-dot.current{background:#ffd54f;color:#333}
+    .timeline-dot.future{background:#e0e0e0;color:#999}
+    .timeline-content{flex:1;padding:10px;border-radius:10px;font-size:0.8em}
+    .timeline-content.done{background:#e8f5e9}
+    .timeline-content.current{background:#fffde7;border:2px solid #ffd54f}
+    .timeline-content.future{background:#f5f5f5}
+    .timeline-title{font-weight:600}
+    .timeline-date{font-size:0.85em;color:#888}
+    .timeline-percent{float:right;padding:2px 8px;border-radius:10px;font-size:0.8em}
+    .timeline-percent.complete{background:#4caf50;color:#fff}
+    .timeline-percent.partial{background:#ffe082}
+    .growth-item{background:#f5f5f5;padding:10px;border-radius:10px;margin-bottom:6px;position:relative}
+    .growth-header{display:flex;justify-content:space-between;margin-bottom:4px;padding-right:30px}
+    .growth-day{font-weight:700;color:#2e7d32;font-size:0.85em}
+    .growth-date{font-size:0.65em;color:#999}
+    .growth-tags{display:flex;flex-wrap:wrap;gap:4px}
+    .growth-tag{padding:3px 8px;border-radius:8px;font-size:0.7em}
+    .growth-tag.height{background:#e3f2fd;color:#1565c0}
+    .growth-tag.leaves{background:#e8f5e9;color:#2e7d32}
+    .growth-tag.problem{background:#ffebee;color:#c62828}
+    .delete-btn{position:absolute;top:8px;right:8px;background:#ef5350;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:0.9em}
+    .plot-selector{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px}
+    .plot-btn{padding:8px 14px;background:#f5f5f5;border:2px solid transparent;border-radius:12px;cursor:pointer;font-size:0.8em;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .plot-btn.active{background:#4caf50;color:#fff}
+    .add-plot-btn{background:#e3f2fd;color:#1976d2;border:2px dashed #90caf9}
+    .plot-card{background:linear-gradient(135deg,#4caf50,#2e7d32);border-radius:16px;padding:14px;color:#fff;margin-bottom:10px}
+    .plot-card .header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .plot-card .icon{font-size:2em}
+    .plot-card .title{font-size:1.1em;font-weight:700}
+    .plot-card .dates{font-size:0.75em;opacity:0.9}
+    .plot-card .progress{background:rgba(255,255,255,0.2);border-radius:10px;padding:8px;margin-top:8px}
+    .plot-card .bar{height:10px;background:rgba(255,255,255,0.3);border-radius:5px;overflow:hidden}
+    .plot-card .fill{height:100%;background:#fff}
+    .plot-card .text{display:flex;justify-content:space-between;font-size:0.7em;margin-top:4px}
+    .chart-container{position:relative;height:220px;margin:10px 0}
+    .warning-box{background:#ffebee;border:2px solid #ef9a9a;border-radius:12px;padding:12px;margin-bottom:10px}
+    .warning-box h3{color:#c62828;font-size:0.85em;margin-bottom:8px}
+    .warning-box ul{list-style:none;font-size:0.75em}
+    .warning-box li{display:flex;gap:6px;margin-bottom:6px}
+    .schedule-table{background:#e8f5e9;border-radius:12px;padding:12px}
+    .schedule-table h3{color:#2e7d32;font-size:0.85em;margin-bottom:8px}
+    .schedule-row{display:flex;justify-content:space-between;padding:8px;background:#fff;border-radius:8px;margin-bottom:4px;font-size:0.75em}
+    .veggie-info{display:flex;gap:10px}
+    .veggie-icon{font-size:2.5em}
+    .veggie-name{font-weight:700;color:#2e7d32}
+    .veggie-desc{font-size:0.75em;color:#666;margin:4px 0}
+    .veggie-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .veggie-stat{background:#f5f5f5;padding:6px 8px;border-radius:8px;font-size:0.7em}
+    .veggie-tip{font-size:0.75em;color:#43a047;margin-top:8px}
+    .bio-accordion{border:2px solid;border-radius:12px;margin-bottom:8px;overflow:hidden}
+    .bio-accordion-header{padding:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+    .bio-accordion-header .info{display:flex;align-items:center;gap:8px}
+    .bio-accordion-header .icon{font-size:1.5em}
+    .bio-accordion-header .name{font-weight:700;font-size:0.9em}
+    .bio-accordion-header .fullname{font-size:0.65em;opacity:0.7}
+    .bio-accordion-header .arrow{transition:transform 0.3s}
+    .bio-accordion.open .arrow{transform:rotate(180deg)}
+    .bio-accordion-body{padding:0 12px 12px;display:none}
+    .bio-accordion.open .bio-accordion-body{display:block}
+    .bio-info-box{background:rgba(255,255,255,0.5);padding:8px;border-radius:8px;margin-bottom:6px;font-size:0.75em}
+    .bio-info-box b{display:block;margin-bottom:2px}
+    .bio-info-box ul{margin:0;padding-left:16px}
+    .empty-state{text-align:center;padding:40px 20px}
+    .empty-state .icon{font-size:3em;margin-bottom:10px}
+    .empty-state p{color:#888;margin-bottom:10px}
+    .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+    .modal-content{background:#fff;border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto}
+    .modal-content h2{color:#2e7d32;margin-bottom:15px}
+    .sync-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:0.7em;background:#e8f5e9;color:#2e7d32}
+    .sync-badge.syncing{background:#fff3e0;color:#e65100}
+    .sync-badge.error{background:#ffebee;color:#c62828}
+    .footer{text-align:center;font-size:0.6em;color:#4caf50;padding:10px 0}
   </style>
 </head>
 <body>
   <div class="container">
     <h1>🌱 บันทึกการปลูกผักอินทรีย์</h1>
-    <p class="subtitle">PWA - ใช้งานได้แม้ไม่มีเน็ต <span id="syncStatus" class="sync-status online">🟢 ออนไลน์</span></p>
-    
-    <div id="installBanner" class="install-banner">
-      <div class="content">
-        <div class="icon">📲</div>
-        <div class="text">
-          <h3>ติดตั้งแอปลงเครื่อง</h3>
-          <p>ใช้งานได้เหมือนแอปจริง ไม่ต้องเปิดเบราว์เซอร์</p>
-        </div>
-      </div>
-      <div class="btns">
-        <button class="btn btn-sm" onclick="installApp()">ติดตั้งเลย</button>
-        <button class="btn btn-sm btn-outline" onclick="dismissInstall()">ไว้ทีหลัง</button>
-      </div>
-    </div>
-    
-    <div id="offlineBanner" class="offline-banner">📴 ออฟไลน์ - ข้อมูลจะซิงค์เมื่อออนไลน์</div>
+    <p class="subtitle">รองรับหลายแปลง | กราฟ | PDF | <span id="syncBadge" class="sync-badge">🔄 กำลังเชื่อมต่อ...</span></p>
     
     <div id="mainApp">
       <div id="planner" class="tab-content active">
@@ -207,7 +168,7 @@
       <div id="guide" class="tab-content"><div id="guideContent"></div></div>
     </div>
     
-    <p class="footer">🌿 PWA v2.0 - ติดตั้งได้ | ใช้ออฟไลน์ | หลายแปลง | กราฟ | PDF 🌿</p>
+    <p class="footer">🌿 บันทึกข้อมูลอัตโนมัติผ่าน Firebase Realtime Database 🌿</p>
   </div>
   
   <nav class="bottom-nav">
@@ -218,56 +179,21 @@
     <button class="nav-btn" onclick="showTab('guide')"><span class="icon">📖</span><span>คู่มือ</span></button>
   </nav>
   
-  <div id="modal" class="modal hidden">
-    <div class="modal-content" id="modalContent"></div>
-  </div>
+  <div id="modal" class="modal hidden"><div class="modal-content" id="modalContent"></div></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-// ==================== PWA Service Worker ====================
-const SW_CODE = `
-const CACHE_NAME = 'veggie-pwa-v2';
-const ASSETS = ['/'];
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => { e.waitUntil(clients.claim()); });
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('Offline')))
-  );
-});
-`;
+// ==================== Firebase Config ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyDVnLYb27BPs_RM-YY6ASBgkYAiKSPMULM",
+  authDomain: "organic-vegetable-planting.firebaseapp.com",
+  databaseURL: "https://organic-vegetable-planting-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "organic-vegetable-planting",
+  storageBucket: "organic-vegetable-planting.firebasestorage.app",
+  messagingSenderId: "384351483160",
+  appId: "1:384351483160:web:008a9797fcd2e9f7819a6d"
+};
 
-if ('serviceWorker' in navigator) {
-  const swBlob = new Blob([SW_CODE], { type: 'application/javascript' });
-  const swUrl = URL.createObjectURL(swBlob);
-  navigator.serviceWorker.register(swUrl).catch(() => {});
-}
-
-// ==================== PWA Install ====================
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  if (!localStorage.getItem('pwa-dismissed')) {
-    document.getElementById('installBanner').classList.add('show');
-  }
-});
-
-function installApp() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(() => {
-      deferredPrompt = null;
-      document.getElementById('installBanner').classList.remove('show');
-    });
-  }
-}
-
-function dismissInstall() {
-  localStorage.setItem('pwa-dismissed', '1');
-  document.getElementById('installBanner').classList.remove('show');
-}
+let db = null;
 
 // ==================== Data ====================
 const saladVeggies = {
@@ -290,15 +216,14 @@ const thaiVeggies = {
 
 const bioProducts = {
   em: { name: 'EM จุลินทรีย์', icon: '🦠', color: 'em', fullName: 'Effective Microorganisms', ratio: '1 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 5-7 วัน', how: 'รดราดที่โคนต้นและใบ', benefits: ['ปรับสภาพดิน', 'ย่อยสลายอินทรียวัตถุ', 'ช่วยดูดซึมธาตุอาหาร', 'ป้องกันโรคในดิน'], tips: 'ราดดินก่อนปลูก 7 วัน', storage: 'เก็บ 25-45°C ได้ 6 เดือน' },
-  tricho: { name: 'ไตรโคเดอร์มา', icon: '🍄', color: 'tricho', fullName: 'Trichoderma', ratio: '25 กรัม : น้ำ 20 ลิตร', when: 'ทุก 5-7 วัน ช่วงเย็น', how: 'ฉีดพ่นใบ กิ่ง ลำต้น', benefits: ['ป้องกันรากเน่า', 'ป้องกันเน่าคอดิน', 'ป้องกันใบไหม้', 'กระตุ้นภูมิคุ้มกัน'], tips: 'คลุกเมล็ด 10g:1kg', storage: 'ตู้เย็น 1 ปี, ห้อง 6 เดือน' },
-  beauveria: { name: 'บิวเวอเรีย', icon: '🦟', color: 'beau', fullName: 'Beauveria bassiana', ratio: '50 กรัม : น้ำ 20 ลิตร', when: 'พบแมลง ทุก 5-7 วัน', how: 'ฉีดพ่นที่แมลงอยู่', benefits: ['กำจัดเพลี้ยอ่อน', 'กำจัดเพลี้ยแป้ง', 'กำจัดแมลงหวี่ขาว', 'กำจัดเพลี้ยไฟ'], tips: 'ฉีดช่วงเย็นเท่านั้น', storage: 'ที่เย็นแห้ง 3-6 เดือน' },
-  metarhizium: { name: 'เมตาไรเซียม', icon: '🪲', color: 'meta', fullName: 'Metarhizium anisopliae', ratio: '50 กรัม : น้ำ 20 ลิตร', when: 'พบแมลง ทุก 5-7 วัน', how: 'ฉีดพ่นหรือราดดิน', benefits: ['กำจัดด้วงหมัดผัก', 'กำจัดไรแดง', 'กำจัดหนอนกอ', 'กำจัดแมลงปีกแข็ง'], tips: 'ราดดินกำจัดหนอนในดิน', storage: 'ที่เย็นแห้ง 3-6 เดือน' },
-  hormone: { name: 'ฮอร์โมนพืช', icon: '🌿', color: 'hormone', fullName: 'ฮอร์โมนผลไม้/ยอดพืช', ratio: '4-5 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 7-10 วัน', how: 'ฉีดพ่นทั่วต้น เช้า/เย็น', benefits: ['เร่งการเติบโต', 'ผักอวบหวานกรอบ', 'เพิ่มผลผลิต', 'ใบเขียวสวย'], tips: 'ทำเอง: มะละกอ+ฟักทอง+กล้วย+EM หมัก 7-8 วัน', storage: 'ขวดปิดสนิท 3 เดือน' }
+  tricho: { name: 'ไตรโคเดอร์มา', icon: '🍄', color: 'tricho', fullName: 'Trichoderma', ratio: '25 กรัม : น้ำ 20 ลิตร', when: 'ทุก 5-7 วัน ช่วงเย็น', how: 'ฉีดพ่นใบ กิ่ง ลำต้น', benefits: ['ป้องกันรากเน่า', 'ป้องกันเน่าคอดิน', 'ป้องกันใบไหม้', 'กระตุ้นภูมิคุ้มกัน'], tips: 'คลุกเมล็ด 10g:1kg', storage: 'ตู้เย็น 1 ปี' },
+  beauveria: { name: 'บิวเวอเรีย', icon: '🦟', color: 'beau', fullName: 'Beauveria bassiana', ratio: '50 กรัม : น้ำ 20 ลิตร', when: 'พบแมลง ทุก 5-7 วัน', how: 'ฉีดพ่นที่แมลงอยู่', benefits: ['กำจัดเพลี้ยอ่อน', 'กำจัดเพลี้ยแป้ง', 'กำจัดแมลงหวี่ขาว', 'กำจัดเพลี้ยไฟ'], tips: 'ฉีดช่วงเย็น', storage: 'ที่เย็นแห้ง 3-6 เดือน' },
+  metarhizium: { name: 'เมตาไรเซียม', icon: '🪲', color: 'meta', fullName: 'Metarhizium anisopliae', ratio: '50 กรัม : น้ำ 20 ลิตร', when: 'พบแมลง ทุก 5-7 วัน', how: 'ฉีดพ่นหรือราดดิน', benefits: ['กำจัดด้วงหมัดผัก', 'กำจัดไรแดง', 'กำจัดหนอนกอ', 'กำจัดแมลงปีกแข็ง'], tips: 'ราดดินกำจัดหนอน', storage: 'ที่เย็นแห้ง 3-6 เดือน' },
+  hormone: { name: 'ฮอร์โมนพืช', icon: '🌿', color: 'hormone', fullName: 'ฮอร์โมนผลไม้', ratio: '4-5 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 7-10 วัน', how: 'ฉีดพ่นทั่วต้น', benefits: ['เร่งการเติบโต', 'ผักอวบหวานกรอบ', 'เพิ่มผลผลิต', 'ใบเขียวสวย'], tips: 'ทำเอง: มะละกอ+ฟักทอง+กล้วย+EM หมัก 7-8 วัน', storage: 'ขวดปิดสนิท 3 เดือน' }
 };
 
 // ==================== State ====================
-let plots = [], currentPlotId = null, isOnline = navigator.onLine, chartInstance = null;
-const LOCAL_KEY = 'veggie-pwa-v2';
+let plots = [], currentPlotId = null, chartInstance = null;
 const $ = id => document.getElementById(id);
 const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
@@ -308,24 +233,34 @@ const getDaysDiff = (d1, d2) => Math.floor((new Date(d1) - new Date(d2)) / 86400
 const today = new Date(); today.setHours(0,0,0,0);
 const todayKey = today.toISOString().split('T')[0];
 
-// ==================== Offline/Online ====================
-function updateOnlineStatus() {
-  isOnline = navigator.onLine;
-  $('syncStatus').className = 'sync-status ' + (isOnline ? 'online' : 'offline');
-  $('syncStatus').innerHTML = isOnline ? '🟢 ออนไลน์' : '🟠 ออฟไลน์';
-  $('offlineBanner').classList.toggle('show', !isOnline);
+// ==================== Firebase Functions ====================
+function updateSyncBadge(status, text) {
+  const badge = $('syncBadge');
+  badge.className = 'sync-badge ' + status;
+  badge.innerHTML = text;
 }
-window.addEventListener('online', updateOnlineStatus);
-window.addEventListener('offline', updateOnlineStatus);
 
-// ==================== Storage ====================
-function saveData() { localStorage.setItem(LOCAL_KEY, JSON.stringify({ plots, currentPlotId })); }
-function loadData() {
-  try {
-    const data = JSON.parse(localStorage.getItem(LOCAL_KEY));
-    if (data) { plots = data.plots || []; currentPlotId = data.currentPlotId; }
-  } catch (e) {}
-  if (plots.length > 0 && !currentPlotId) currentPlotId = plots[0].id;
+function saveToFirebase() {
+  if (!db) return;
+  updateSyncBadge('syncing', '🔄 กำลังบันทึก...');
+  db.ref('veggie-app-v3').set({ plots, currentPlotId })
+    .then(() => updateSyncBadge('', '✅ บันทึกแล้ว'))
+    .catch(err => updateSyncBadge('error', '❌ บันทึกล้มเหลว'));
+}
+
+function loadFromFirebase() {
+  if (!db) return;
+  db.ref('veggie-app-v3').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      plots = data.plots || [];
+      currentPlotId = data.currentPlotId || (plots[0]?.id || null);
+    }
+    updateSyncBadge('', '✅ เชื่อมต่อแล้ว');
+    renderAll();
+  }, err => {
+    updateSyncBadge('error', '❌ โหลดล้มเหลว');
+  });
 }
 
 // ==================== Navigation ====================
@@ -350,12 +285,12 @@ function renderAll() { renderPlotSelector(); renderCurrentTab(); }
 
 // ==================== Plot Management ====================
 function renderPlotSelector() {
-  let html = plots.map(p => `<button class="plot-btn ${p.id === currentPlotId ? 'active' : ''}" onclick="selectPlot('${p.id}')"><span class="plot-icon">${p.veggie?.icon || '🌱'}</span><span>${p.name || p.veggie?.name}</span></button>`).join('');
+  let html = plots.map(p => `<button class="plot-btn ${p.id === currentPlotId ? 'active' : ''}" onclick="selectPlot('${p.id}')">${p.veggie?.icon || '🌱'} ${p.name}</button>`).join('');
   html += `<button class="plot-btn add-plot-btn" onclick="showAddPlotModal()">➕ เพิ่มแปลง</button>`;
   $('plotSelector').innerHTML = html;
 }
 
-function selectPlot(id) { currentPlotId = id; saveData(); renderAll(); }
+function selectPlot(id) { currentPlotId = id; saveToFirebase(); renderAll(); }
 function getCurrentPlot() { return plots.find(p => p.id === currentPlotId); }
 
 function showAddPlotModal() {
@@ -391,7 +326,7 @@ function createPlot() {
   const newPlot = { id: genId(), name, veggie, startDate: start.toISOString(), phases, completedTasks: {}, dailyLogs: {}, growthLogs: [] };
   plots.push(newPlot);
   currentPlotId = newPlot.id;
-  saveData(); closeModal(); renderAll();
+  saveToFirebase(); closeModal(); renderAll();
 }
 
 function generatePhases(veggie, start) {
@@ -416,7 +351,7 @@ function deletePlot(id) {
   if (!confirm('ลบแปลงนี้?')) return;
   plots = plots.filter(p => p.id !== id);
   if (currentPlotId === id) currentPlotId = plots[0]?.id || null;
-  saveData(); renderAll();
+  saveToFirebase(); renderAll();
 }
 
 // ==================== Phase & Tasks ====================
@@ -433,17 +368,17 @@ function toggleTask(plotId, phaseId, taskIdx) {
   const plot = plots.find(p => p.id === plotId);
   if (!plot) return;
   plot.completedTasks[`${phaseId}-${taskIdx}`] = !plot.completedTasks[`${phaseId}-${taskIdx}`];
-  saveData(); renderCurrentTab();
+  saveToFirebase(); renderCurrentTab();
 }
 function logDaily(plotId, type) {
   const plot = plots.find(p => p.id === plotId);
   if (!plot) return;
   if (!plot.dailyLogs[todayKey]) plot.dailyLogs[todayKey] = {};
   plot.dailyLogs[todayKey][type] = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  saveData(); renderCurrentTab();
+  saveToFirebase(); renderCurrentTab();
 }
 
-// ==================== Validation ====================
+// ==================== Growth Log ====================
 function validateNum(val, min = 0, max = 1000) {
   const num = parseFloat(val);
   if (isNaN(num)) return { ok: false, err: 'กรอกตัวเลข' };
@@ -470,7 +405,7 @@ function addGrowthLog(plotId) {
   
   plot.growthLogs.push({ id: genId(), date: new Date().toISOString(), day: getDaysDiff(today, plot.startDate) + 1, height: vH, leaves: vL, problem: p });
   hInput.value = ''; lInput.value = ''; pInput.value = '';
-  saveData(); renderCurrentTab();
+  saveToFirebase(); renderCurrentTab();
 }
 
 function deleteGrowthLog(plotId, logId) {
@@ -478,7 +413,7 @@ function deleteGrowthLog(plotId, logId) {
   const plot = plots.find(p => p.id === plotId);
   if (!plot) return;
   plot.growthLogs = plot.growthLogs.filter(l => l.id !== logId);
-  saveData(); renderCurrentTab();
+  saveToFirebase(); renderCurrentTab();
 }
 
 // ==================== Render Functions ====================
@@ -536,7 +471,7 @@ function renderProgress() {
   
   let html = `<div class="card"><h2>📈 ${plot.name}</h2><div class="stats-grid"><div class="stat-box green"><div class="stat-value">${dayNum}</div><div class="stat-label">วันที่</div></div><div class="stat-box blue"><div class="stat-value">${tasksDone}</div><div class="stat-label">งานเสร็จ</div></div><div class="stat-box purple"><div class="stat-value">${daysLeft}</div><div class="stat-label">วันเหลือ</div></div><div class="stat-box orange"><div class="stat-value">${pct}%</div><div class="stat-label">คืบหน้า</div></div></div></div>`;
   
-  if (plot.growthLogs.length >= 2) html += `<div class="card"><h2>📊 กราฟการเติบโต</h2><div class="chart-container"><canvas id="growthChart"></canvas></div></div>`;
+  if (plot.growthLogs && plot.growthLogs.length >= 2) html += `<div class="card"><h2>📊 กราฟการเติบโต</h2><div class="chart-container"><canvas id="growthChart"></canvas></div></div>`;
   
   html += `<div class="card"><h2>📊 ไทม์ไลน์</h2>${plot.phases.map((phase, idx) => {
     const isPast = new Date(phase.date) < today, isCurrent = current?.id === phase.id, comp = getPhaseCompletion(plot, phase);
@@ -544,7 +479,7 @@ function renderProgress() {
   }).join('')}</div>`;
   
   $('progressContent').innerHTML = html;
-  if (plot.growthLogs.length >= 2) setTimeout(() => renderChart(plot), 100);
+  if (plot.growthLogs && plot.growthLogs.length >= 2) setTimeout(() => renderChart(plot), 100);
 }
 
 function renderChart(plot) {
@@ -562,7 +497,7 @@ function renderChart(plot) {
         { label: 'จำนวนใบ', data: logs.map(l => l.leaves), borderColor: '#2196f3', backgroundColor: 'rgba(33,150,243,0.1)', tension: 0.3, fill: true, yAxisID: 'y1' }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { position: 'left', title: { display: true, text: 'ซม.' } }, y1: { position: 'right', title: { display: true, text: 'ใบ' }, grid: { drawOnChartArea: false } } } }
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { position: 'left', title: { display: true, text: 'ซม.' } }, y1: { position: 'right', title: { display: true, text: 'ใบ' }, grid: { drawOnChartArea: false } } } }
   });
 }
 
@@ -571,11 +506,12 @@ function renderRecord() {
   if (!plot) { $('recordContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแปลง</p></div>`; return; }
   
   const dayNum = getDaysDiff(today, plot.startDate) + 1;
-  let html = `<div class="card"><h2>📏 บันทึก - ${plot.name}</h2><p style="font-size:0.75em;color:#888;margin-bottom:10px;">วันที่ ${dayNum}</p><div class="form-row"><div class="form-group"><label>📏 ความสูง (ซม.)</label><input type="number" id="newHeight" placeholder="เช่น 5" min="0" max="500" inputmode="decimal"></div><div class="form-group"><label>🍃 จำนวนใบ</label><input type="number" id="newLeaves" placeholder="เช่น 4" min="0" max="1000" inputmode="numeric"></div></div><div class="form-group"><label>⚠️ ปัญหา</label><input type="text" id="problemLog" placeholder="เช่น พบเพลี้ย"></div><button class="btn" onclick="addGrowthLog('${plot.id}')">➕ บันทึก</button></div>`;
+  let html = `<div class="card"><h2>📏 บันทึก - ${plot.name}</h2><p style="font-size:0.75em;color:#888;margin-bottom:10px;">วันที่ ${dayNum}</p><div class="form-row"><div class="form-group"><label>📏 ความสูง (ซม.)</label><input type="number" id="newHeight" placeholder="เช่น 5" min="0" max="500"></div><div class="form-group"><label>🍃 จำนวนใบ</label><input type="number" id="newLeaves" placeholder="เช่น 4" min="0" max="1000"></div></div><div class="form-group"><label>⚠️ ปัญหา</label><input type="text" id="problemLog" placeholder="เช่น พบเพลี้ย"></div><button class="btn" onclick="addGrowthLog('${plot.id}')">➕ บันทึก</button></div>`;
   
-  html += `<div class="card"><h2>📊 ประวัติ (${plot.growthLogs.length})</h2>${plot.growthLogs.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : plot.growthLogs.slice().reverse().map(log => `<div class="growth-item"><button class="delete-btn" onclick="deleteGrowthLog('${plot.id}', '${log.id}')" title="ลบ">×</button><div class="growth-header"><span class="growth-day">📅 วันที่ ${log.day}</span><span class="growth-date">${formatDate(log.date)}</span></div><div class="growth-tags">${log.height ? `<span class="growth-tag height">📏 ${log.height} ซม.</span>` : ''}${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}</div></div>`).join('')}</div>`;
+  const logs = plot.growthLogs || [];
+  html += `<div class="card"><h2>📊 ประวัติ (${logs.length})</h2>${logs.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : logs.slice().reverse().map(log => `<div class="growth-item"><button class="delete-btn" onclick="deleteGrowthLog('${plot.id}', '${log.id}')" title="ลบ">×</button><div class="growth-header"><span class="growth-day">📅 วันที่ ${log.day}</span><span class="growth-date">${formatDate(log.date)}</span></div><div class="growth-tags">${log.height ? `<span class="growth-tag height">📏 ${log.height} ซม.</span>` : ''}${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}</div></div>`).join('')}</div>`;
   
-  const logEntries = Object.entries(plot.dailyLogs).slice().reverse().slice(0, 7);
+  const logEntries = Object.entries(plot.dailyLogs || {}).slice().reverse().slice(0, 7);
   html += `<div class="card"><h2>📋 กิจกรรม 7 วัน</h2>${logEntries.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : logEntries.map(([date, logs]) => `<div style="background:#f5f5f5;padding:8px;border-radius:8px;margin-bottom:6px;"><div style="font-size:0.75em;font-weight:600;color:#555;margin-bottom:4px;">${new Date(date).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })}</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${logs.water_am ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#e3f2fd;color:#1565c0;">💧เช้า</span>` : ''}${logs.water_pm ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#e3f2fd;color:#1565c0;">💧เย็น</span>` : ''}${logs.em ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#fff3e0;color:#e65100;">🦠EM</span>` : ''}${logs.tricho ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#e8f5e9;color:#2e7d32;">🍄ไตรโค</span>` : ''}${logs.check ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#fffde7;color:#f9a825;">🔍ตรวจ</span>` : ''}${logs.photo ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#f3e5f5;color:#7b1fa2;">📸</span>` : ''}</div></div>`).join('')}</div>`;
   
   $('recordContent').innerHTML = html;
@@ -586,7 +522,7 @@ function renderGuide() {
   
   html += `<div class="warning-box"><h3>⚠️ ข้อควรระวัง</h3><ul><li><span>❌</span> ห้ามใช้ชีวภัณฑ์กำจัดแมลงกับสารเคมีกำจัดเชื้อรา</li><li><span>❌</span> ไตรโค + บิวเวอเรีย ไม่ควรผสมกัน</li><li><span>✅</span> บิวเวอเรีย + เมตาไรเซียม ใช้ด้วยกันได้</li><li><span>🌅</span> ฉีดพ่นช่วงเย็นหรือเช้าตรู่</li><li><span>❄️</span> เก็บในที่เย็น อายุ 3-6 เดือน</li><li><span>⏸️</span> หยุดฉีดก่อนเก็บ 3-5 วัน</li></ul></div>`;
   
-  html += `<div class="schedule-table"><h3>📋 ตารางการใช้</h3><div class="schedule-row"><span class="time">ก่อนปลูก 7 วัน</span><span class="action">EM + ไตรโค</span></div><div class="schedule-row"><span class="time">วันปลูก</span><span class="action">คลุกเมล็ดไตรโค</span></div><div class="schedule-row"><span class="time">ทุก 5-7 วัน</span><span class="action">EM + ไตรโค</span></div><div class="schedule-row"><span class="time">ทุก 7-10 วัน</span><span class="action">ฮอร์โมน</span></div><div class="schedule-row"><span class="time">พบแมลง</span><span class="action">บิวเวอเรีย/เมตา</span></div><div class="schedule-row"><span class="time">ก่อนเก็บ 3-5 วัน</span><span class="action red">หยุดทุกอย่าง</span></div></div>`;
+  html += `<div class="schedule-table"><h3>📋 ตารางการใช้</h3><div class="schedule-row"><span class="time">ก่อนปลูก 7 วัน</span><span class="action">EM + ไตรโค</span></div><div class="schedule-row"><span class="time">วันปลูก</span><span class="action">คลุกเมล็ดไตรโค</span></div><div class="schedule-row"><span class="time">ทุก 5-7 วัน</span><span class="action">EM + ไตรโค</span></div><div class="schedule-row"><span class="time">ทุก 7-10 วัน</span><span class="action">ฮอร์โมน</span></div><div class="schedule-row"><span class="time">พบแมลง</span><span class="action">บิวเวอเรีย/เมตา</span></div><div class="schedule-row"><span class="time">ก่อนเก็บ 3-5 วัน</span><span class="action" style="color:#c62828;">หยุดทุกอย่าง</span></div></div>`;
   
   $('guideContent').innerHTML = html;
 }
@@ -610,14 +546,15 @@ async function exportPDF(plotId) {
   y += 4;
   
   const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(new Date(plot.startDate), -7)) / (plot.veggie.days + 7)) * 100)));
-  const tasksDone = Object.values(plot.completedTasks).filter(Boolean).length;
+  const tasksDone = Object.values(plot.completedTasks || {}).filter(Boolean).length;
   addText(`Progress: ${pct}%`, 14);
   addText(`Tasks Done: ${tasksDone}`, 12);
   y += 4;
   
-  if (plot.growthLogs.length) {
-    addText(`Growth Records (${plot.growthLogs.length})`, 14);
-    plot.growthLogs.forEach(log => {
+  const logs = plot.growthLogs || [];
+  if (logs.length) {
+    addText(`Growth Records (${logs.length})`, 14);
+    logs.forEach(log => {
       let t = `Day ${log.day}: `;
       if (log.height) t += `H:${log.height}cm `;
       if (log.leaves) t += `L:${log.leaves} `;
@@ -637,9 +574,15 @@ async function exportPDF(plotId) {
 
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
-  updateOnlineStatus();
-  loadData();
-  renderAll();
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    updateSyncBadge('syncing', '🔄 กำลังโหลด...');
+    loadFromFirebase();
+  } catch (e) {
+    updateSyncBadge('error', '❌ เชื่อมต่อล้มเหลว');
+    console.error(e);
+  }
   renderGuide();
 });
 
