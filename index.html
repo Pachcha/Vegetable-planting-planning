@@ -3,26 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>บันทึกผักอินทรีย์ + Firebase</title>
+  <title>บันทึกผักอินทรีย์ + ไฮโดรโปนิกส์</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Sarabun',sans-serif;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);min-height:100vh;padding:8px;padding-bottom:70px}
+    body{font-family:system-ui,sans-serif;background:linear-gradient(135deg,#e8f5e9,#e3f2fd);min-height:100vh;padding:8px;padding-bottom:70px}
     .container{max-width:650px;margin:0 auto}
     h1{text-align:center;color:#2e7d32;font-size:1.3em;margin-bottom:2px}
     .subtitle{text-align:center;color:#43a047;font-size:0.7em;margin-bottom:10px}
     .card{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
     .card h2{color:#2e7d32;font-size:1em;margin-bottom:10px}
+    .card.hydro{border-left:4px solid #2196f3}
+    .card.hydro h2{color:#1565c0}
     .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
     .form-group{margin-bottom:10px}
     .form-group label{display:block;font-size:0.75em;color:#555;margin-bottom:4px;font-weight:600}
     select,input[type="date"],input[type="number"],input[type="text"]{width:100%;padding:10px;border:2px solid #c8e6c9;border-radius:10px;font-size:14px;outline:none}
+    .hydro-input{border-color:#90caf9}
     input:focus,select:focus{border-color:#4caf50}
-    input.error{border-color:#ef5350;background:#ffebee}
-    .error-msg{color:#c62828;font-size:0.7em;margin-top:2px}
     .btn{background:linear-gradient(135deg,#66bb6a,#43a047);color:#fff;border:none;padding:12px;border-radius:12px;font-size:0.85em;font-weight:700;cursor:pointer;width:100%}
     .btn:hover{opacity:0.9}
     .btn-sm{padding:8px 12px;font-size:0.75em;width:auto}
@@ -36,37 +37,29 @@
     .nav-btn.active{color:#4caf50;background:#e8f5e9}
     .tab-content{display:none}
     .tab-content.active{display:block}
-    .status-card{background:linear-gradient(135deg,#ffd54f,#ff9800);border-radius:16px;padding:14px;color:#fff;margin-bottom:10px}
-    .status-card h2{color:#fff;margin-bottom:4px;font-size:0.95em}
-    .status-card p{font-size:0.8em;opacity:0.9}
-    .status-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-    .status-badge{background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;font-size:0.7em}
-    .phase-card{border-left:4px solid #4caf50}
-    .phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .phase-title{font-weight:700;color:#2e7d32;font-size:0.95em}
-    .phase-badge{background:#4caf50;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.65em}
-    .phase-desc{color:#666;font-size:0.8em;margin-bottom:10px}
-    .bio-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
-    .bio-tag{padding:4px 10px;border-radius:12px;font-size:0.7em;border:1px solid}
-    .bio-em{background:#fff3e0;color:#e65100;border-color:#ffcc80}
-    .bio-tricho{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
-    .bio-beau{background:#fce4ec;color:#c2185b;border-color:#f8bbd9}
-    .bio-meta{background:#e3f2fd;color:#1565c0;border-color:#90caf9}
-    .bio-hormone{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8}
-    .checklist{list-style:none}
-    .checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:4px;background:#f5f5f5;border-radius:10px;cursor:pointer;font-size:0.8em}
-    .checklist li.done{background:#c8e6c9}
-    .checklist li.done span{text-decoration:line-through;color:#888}
-    .checklist input[type="checkbox"]{width:20px;height:20px;accent-color:#4caf50}
-    .progress-wrap{background:#e0e0e0;border-radius:10px;height:8px;margin-top:8px;overflow:hidden}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#81c784,#4caf50)}
-    .progress-text{display:flex;justify-content:space-between;font-size:0.7em;color:#666;margin-top:4px}
-    .quick-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-    .quick-btn{padding:12px 6px;border:none;border-radius:12px;cursor:pointer;background:#f0f0f0;display:flex;flex-direction:column;align-items:center;gap:4px}
-    .quick-btn.done{background:#4caf50;color:#fff}
-    .quick-btn .icon{font-size:1.3em}
-    .quick-btn .label{font-size:0.65em;font-weight:600}
-    .quick-btn .time{font-size:0.55em;opacity:0.8}
+    .plot-selector{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px}
+    .plot-btn{padding:8px 14px;background:#f5f5f5;border:2px solid transparent;border-radius:12px;cursor:pointer;font-size:0.8em;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0}
+    .plot-btn.active{background:#4caf50;color:#fff}
+    .plot-btn.hydro.active{background:#1976d2}
+    .add-plot-btn{background:#e3f2fd;color:#1976d2;border:2px dashed #90caf9}
+    .plot-card{border-radius:16px;padding:14px;color:#fff;margin-bottom:10px}
+    .plot-card.organic{background:linear-gradient(135deg,#4caf50,#2e7d32)}
+    .plot-card.hydro{background:linear-gradient(135deg,#2196f3,#1565c0)}
+    .plot-card .header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .plot-card .icon{font-size:2em}
+    .plot-card .title{font-size:1.1em;font-weight:700}
+    .plot-card .dates{font-size:0.75em;opacity:0.9}
+    .plot-card .progress{background:rgba(255,255,255,0.2);border-radius:10px;padding:8px;margin-top:8px}
+    .plot-card .bar{height:10px;background:rgba(255,255,255,0.3);border-radius:5px;overflow:hidden}
+    .plot-card .fill{height:100%;background:#fff}
+    .plot-card .text{display:flex;justify-content:space-between;font-size:0.7em;margin-top:4px}
+    .type-selector{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px}
+    .type-btn{padding:20px 15px;border:3px solid #e0e0e0;border-radius:16px;cursor:pointer;text-align:center;background:#fff;transition:all 0.2s}
+    .type-btn.active{border-color:#4caf50;background:#e8f5e9}
+    .type-btn.hydro.active{border-color:#2196f3;background:#e3f2fd}
+    .type-btn .icon{font-size:2em;margin-bottom:5px}
+    .type-btn .name{font-weight:700;font-size:0.9em}
+    .type-btn .desc{font-size:0.7em;color:#888;margin-top:4px}
     .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
     .stat-box{background:#f5f5f5;padding:10px 6px;border-radius:12px}
     .stat-box.green{background:#e8f5e9}
@@ -75,6 +68,58 @@
     .stat-box.orange{background:#fff3e0}
     .stat-value{font-size:1.4em;font-weight:700;color:#333}
     .stat-label{font-size:0.55em;color:#888}
+    .hydro-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+    .hydro-stat{background:#e3f2fd;padding:12px;border-radius:12px;text-align:center}
+    .hydro-stat .value{font-size:1.5em;font-weight:700;color:#1565c0}
+    .hydro-stat .label{font-size:0.7em;color:#1976d2}
+    .hydro-stat .status{font-size:0.65em;padding:2px 8px;border-radius:10px;margin-top:4px;display:inline-block}
+    .hydro-stat .status.good{background:#c8e6c9;color:#2e7d32}
+    .hydro-stat .status.warn{background:#fff3e0;color:#e65100}
+    .hydro-stat .status.bad{background:#ffcdd2;color:#c62828}
+    .quick-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .quick-btn{padding:12px 6px;border:none;border-radius:12px;cursor:pointer;background:#f0f0f0;display:flex;flex-direction:column;align-items:center;gap:4px}
+    .quick-btn.done{background:#4caf50;color:#fff}
+    .quick-btn.hydro.done{background:#1976d2}
+    .quick-btn .icon{font-size:1.3em}
+    .quick-btn .label{font-size:0.65em;font-weight:600}
+    .quick-btn .time{font-size:0.55em;opacity:0.8}
+    .checklist{list-style:none}
+    .checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:4px;background:#f5f5f5;border-radius:10px;cursor:pointer;font-size:0.8em}
+    .checklist li.done{background:#c8e6c9}
+    .checklist li.done span{text-decoration:line-through;color:#888}
+    .checklist input[type="checkbox"]{width:20px;height:20px;accent-color:#4caf50}
+    .progress-wrap{background:#e0e0e0;border-radius:10px;height:8px;margin-top:8px;overflow:hidden}
+    .progress-bar{height:100%;background:linear-gradient(90deg,#81c784,#4caf50)}
+    .progress-bar.hydro{background:linear-gradient(90deg,#64b5f6,#1976d2)}
+    .progress-text{display:flex;justify-content:space-between;font-size:0.7em;color:#666;margin-top:4px}
+    .phase-card{border-left:4px solid #4caf50}
+    .phase-card.hydro{border-left-color:#2196f3}
+    .phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .phase-title{font-weight:700;color:#2e7d32;font-size:0.95em}
+    .phase-card.hydro .phase-title{color:#1565c0}
+    .phase-badge{background:#4caf50;color:#fff;padding:3px 10px;border-radius:12px;font-size:0.65em}
+    .phase-badge.hydro{background:#1976d2}
+    .phase-desc{color:#666;font-size:0.8em;margin-bottom:10px}
+    .bio-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+    .bio-tag{padding:4px 10px;border-radius:12px;font-size:0.7em;border:1px solid}
+    .bio-em{background:#fff3e0;color:#e65100;border-color:#ffcc80}
+    .bio-tricho{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
+    .bio-beau{background:#fce4ec;color:#c2185b;border-color:#f8bbd9}
+    .bio-meta{background:#e3f2fd;color:#1565c0;border-color:#90caf9}
+    .bio-hormone{background:#f3e5f5;color:#7b1fa2;border-color:#ce93d8}
+    .bio-nutrient{background:#e3f2fd;color:#1565c0;border-color:#90caf9}
+    .growth-item{background:#f5f5f5;padding:10px;border-radius:10px;margin-bottom:6px;position:relative}
+    .growth-header{display:flex;justify-content:space-between;margin-bottom:4px;padding-right:30px}
+    .growth-day{font-weight:700;color:#2e7d32;font-size:0.85em}
+    .growth-date{font-size:0.65em;color:#999}
+    .growth-tags{display:flex;flex-wrap:wrap;gap:4px}
+    .growth-tag{padding:3px 8px;border-radius:8px;font-size:0.7em}
+    .growth-tag.height{background:#e3f2fd;color:#1565c0}
+    .growth-tag.leaves{background:#e8f5e9;color:#2e7d32}
+    .growth-tag.ec{background:#fff3e0;color:#e65100}
+    .growth-tag.ph{background:#f3e5f5;color:#7b1fa2}
+    .growth-tag.problem{background:#ffebee;color:#c62828}
+    .delete-btn{position:absolute;top:8px;right:8px;background:#ef5350;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:0.9em}
     .timeline-item{display:flex;gap:10px;margin-bottom:8px}
     .timeline-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7em;font-weight:700;flex-shrink:0}
     .timeline-dot.done{background:#4caf50;color:#fff}
@@ -89,44 +134,11 @@
     .timeline-percent{float:right;padding:2px 8px;border-radius:10px;font-size:0.8em}
     .timeline-percent.complete{background:#4caf50;color:#fff}
     .timeline-percent.partial{background:#ffe082}
-    .growth-item{background:#f5f5f5;padding:10px;border-radius:10px;margin-bottom:6px;position:relative}
-    .growth-header{display:flex;justify-content:space-between;margin-bottom:4px;padding-right:30px}
-    .growth-day{font-weight:700;color:#2e7d32;font-size:0.85em}
-    .growth-date{font-size:0.65em;color:#999}
-    .growth-tags{display:flex;flex-wrap:wrap;gap:4px}
-    .growth-tag{padding:3px 8px;border-radius:8px;font-size:0.7em}
-    .growth-tag.height{background:#e3f2fd;color:#1565c0}
-    .growth-tag.leaves{background:#e8f5e9;color:#2e7d32}
-    .growth-tag.problem{background:#ffebee;color:#c62828}
-    .delete-btn{position:absolute;top:8px;right:8px;background:#ef5350;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:0.9em}
-    .plot-selector{display:flex;gap:8px;margin-bottom:10px;overflow-x:auto;padding-bottom:4px}
-    .plot-btn{padding:8px 14px;background:#f5f5f5;border:2px solid transparent;border-radius:12px;cursor:pointer;font-size:0.8em;white-space:nowrap;display:flex;align-items:center;gap:6px;flex-shrink:0}
-    .plot-btn.active{background:#4caf50;color:#fff}
-    .add-plot-btn{background:#e3f2fd;color:#1976d2;border:2px dashed #90caf9}
-    .plot-card{background:linear-gradient(135deg,#4caf50,#2e7d32);border-radius:16px;padding:14px;color:#fff;margin-bottom:10px}
-    .plot-card .header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-    .plot-card .icon{font-size:2em}
-    .plot-card .title{font-size:1.1em;font-weight:700}
-    .plot-card .dates{font-size:0.75em;opacity:0.9}
-    .plot-card .progress{background:rgba(255,255,255,0.2);border-radius:10px;padding:8px;margin-top:8px}
-    .plot-card .bar{height:10px;background:rgba(255,255,255,0.3);border-radius:5px;overflow:hidden}
-    .plot-card .fill{height:100%;background:#fff}
-    .plot-card .text{display:flex;justify-content:space-between;font-size:0.7em;margin-top:4px}
     .chart-container{position:relative;height:220px;margin:10px 0}
-    .warning-box{background:#ffebee;border:2px solid #ef9a9a;border-radius:12px;padding:12px;margin-bottom:10px}
-    .warning-box h3{color:#c62828;font-size:0.85em;margin-bottom:8px}
-    .warning-box ul{list-style:none;font-size:0.75em}
-    .warning-box li{display:flex;gap:6px;margin-bottom:6px}
-    .schedule-table{background:#e8f5e9;border-radius:12px;padding:12px}
-    .schedule-table h3{color:#2e7d32;font-size:0.85em;margin-bottom:8px}
-    .schedule-row{display:flex;justify-content:space-between;padding:8px;background:#fff;border-radius:8px;margin-bottom:4px;font-size:0.75em}
-    .veggie-info{display:flex;gap:10px}
-    .veggie-icon{font-size:2.5em}
-    .veggie-name{font-weight:700;color:#2e7d32}
-    .veggie-desc{font-size:0.75em;color:#666;margin:4px 0}
-    .veggie-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
-    .veggie-stat{background:#f5f5f5;padding:6px 8px;border-radius:8px;font-size:0.7em}
-    .veggie-tip{font-size:0.75em;color:#43a047;margin-top:8px}
+    .system-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:0.7em;background:#e3f2fd;color:#1565c0;margin-left:8px}
+    .nutrient-guide{background:#e3f2fd;border-radius:12px;padding:12px;margin-top:10px}
+    .nutrient-guide h3{color:#1565c0;font-size:0.85em;margin-bottom:8px}
+    .nutrient-row{display:flex;justify-content:space-between;padding:8px;background:#fff;border-radius:8px;margin-bottom:4px;font-size:0.75em}
     .bio-accordion{border:2px solid;border-radius:12px;margin-bottom:8px;overflow:hidden}
     .bio-accordion-header{padding:12px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
     .bio-accordion-header .info{display:flex;align-items:center;gap:8px}
@@ -140,22 +152,30 @@
     .bio-info-box{background:rgba(255,255,255,0.5);padding:8px;border-radius:8px;margin-bottom:6px;font-size:0.75em}
     .bio-info-box b{display:block;margin-bottom:2px}
     .bio-info-box ul{margin:0;padding-left:16px}
+    .warning-box{background:#ffebee;border:2px solid #ef9a9a;border-radius:12px;padding:12px;margin-bottom:10px}
+    .warning-box h3{color:#c62828;font-size:0.85em;margin-bottom:8px}
+    .warning-box ul{list-style:none;font-size:0.75em}
+    .warning-box li{display:flex;gap:6px;margin-bottom:6px}
+    .tip-box{background:#e3f2fd;border:2px solid #90caf9;border-radius:12px;padding:12px;margin-bottom:10px}
+    .tip-box h3{color:#1565c0;font-size:0.85em;margin-bottom:8px}
+    .tip-box ul{list-style:none;font-size:0.75em}
+    .tip-box li{display:flex;gap:6px;margin-bottom:6px}
     .empty-state{text-align:center;padding:40px 20px}
     .empty-state .icon{font-size:3em;margin-bottom:10px}
     .empty-state p{color:#888;margin-bottom:10px}
     .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
     .modal-content{background:#fff;border-radius:16px;padding:20px;max-width:400px;width:100%;max-height:80vh;overflow-y:auto}
     .modal-content h2{color:#2e7d32;margin-bottom:15px}
-    .sync-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:12px;font-size:0.7em;background:#e8f5e9;color:#2e7d32}
-    .sync-badge.syncing{background:#fff3e0;color:#e65100}
-    .sync-badge.error{background:#ffebee;color:#c62828}
-    .footer{text-align:center;font-size:0.6em;color:#4caf50;padding:10px 0}
+    .tabs{display:flex;gap:4px;margin-bottom:15px}
+    .tab-btn{flex:1;padding:10px;border:none;background:#f5f5f5;border-radius:10px;cursor:pointer;font-size:0.8em;font-weight:600}
+    .tab-btn.active{background:#4caf50;color:#fff}
+    .tab-btn.hydro.active{background:#1976d2}
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>🌱 บันทึกการปลูกผักอินทรีย์</h1>
-    <p class="subtitle">รองรับหลายแปลง | กราฟ | PDF | <span id="syncBadge" class="sync-badge">🔄 กำลังเชื่อมต่อ...</span></p>
+    <h1>🌱 บันทึกการปลูกผัก</h1>
+    <p class="subtitle">อินทรีย์ + ไฮโดรโปนิกส์ | <span id="syncBadge" style="background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:10px;font-size:0.9em;">🔄 กำลังเชื่อมต่อ...</span></p>
     
     <div id="mainApp">
       <div id="planner" class="tab-content active">
@@ -167,8 +187,6 @@
       <div id="record" class="tab-content"><div id="recordContent"></div></div>
       <div id="guide" class="tab-content"><div id="guideContent"></div></div>
     </div>
-    
-    <p class="footer">🌿 บันทึกข้อมูลอัตโนมัติผ่าน Firebase Realtime Database 🌿</p>
   </div>
   
   <nav class="bottom-nav">
@@ -192,38 +210,47 @@ const firebaseConfig = {
   messagingSenderId: "384351483160",
   appId: "1:384351483160:web:008a9797fcd2e9f7819a6d"
 };
-
 let db = null;
 
 // ==================== Data ====================
 const saladVeggies = {
-  greenoak: { name: 'กรีนโอ๊ค', icon: '🥬', days: 45, germDays: 3, desc: 'ใบสีเขียวอ่อน รสกรอบ', tips: 'ชอบแดดรำไร รดน้ำสม่ำเสมอ', water: 'วันละ 2 ครั้ง', light: 'แดดรำไร 4-6 ชม.' },
-  redoak: { name: 'เรดโอ๊ค', icon: '🥗', days: 45, germDays: 3, desc: 'ใบสีแดง วิตามินสูง', tips: 'ต้องการแสงแดดให้สีแดงสวย', water: 'วันละ 2 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
-  butterhead: { name: 'บัตเตอร์เฮด', icon: '🥬', days: 50, germDays: 4, desc: 'ใบนุ่ม รสหวานมัน', tips: 'ชอบอากาศเย็น ระวังน้ำขัง', water: 'วันละ 2 ครั้ง', light: 'แดดอ่อน 4-5 ชม.' },
-  cos: { name: 'กรีนคอส', icon: '🥗', days: 55, germDays: 4, desc: 'ใบยาวกรอบ ทำสลัด', tips: 'ทนแดด ต้องการน้ำมาก', water: 'วันละ 2-3 ครั้ง', light: 'แดดจัด 5-7 ชม.' },
-  filley: { name: 'ฟิลเลย์', icon: '🌿', days: 40, germDays: 3, desc: 'ใบหยัก โตเร็ว', tips: 'เหมาะสำหรับมือใหม่', water: 'วันละ 2 ครั้ง', light: 'แดดรำไร 4-5 ชม.' }
+  greenoak: { name: 'กรีนโอ๊ค', icon: '🥬', days: 45, germDays: 3, hydroDays: 35, desc: 'ใบสีเขียวอ่อน รสกรอบ', tips: 'ชอบแดดรำไร', water: 'วันละ 2 ครั้ง', light: '4-6 ชม.' },
+  redoak: { name: 'เรดโอ๊ค', icon: '🥗', days: 45, germDays: 3, hydroDays: 35, desc: 'ใบสีแดง วิตามินสูง', tips: 'ต้องการแสงให้สีสวย', water: 'วันละ 2 ครั้ง', light: '5-6 ชม.' },
+  butterhead: { name: 'บัตเตอร์เฮด', icon: '🥬', days: 50, germDays: 4, hydroDays: 40, desc: 'ใบนุ่ม รสหวานมัน', tips: 'ชอบอากาศเย็น', water: 'วันละ 2 ครั้ง', light: '4-5 ชม.' },
+  cos: { name: 'กรีนคอส', icon: '🥗', days: 55, germDays: 4, hydroDays: 42, desc: 'ใบยาวกรอบ ทำสลัด', tips: 'ทนแดด ต้องการน้ำมาก', water: 'วันละ 2-3 ครั้ง', light: '5-7 ชม.' },
+  filley: { name: 'ฟิลเลย์', icon: '🌿', days: 40, germDays: 3, hydroDays: 30, desc: 'ใบหยัก โตเร็ว', tips: 'เหมาะสำหรับมือใหม่', water: 'วันละ 2 ครั้ง', light: '4-5 ชม.' }
 };
 
 const thaiVeggies = {
-  kana: { name: 'คะน้า', icon: '🥬', days: 50, germDays: 4, desc: 'ผักยอดนิยม วิตามินสูง', tips: 'ปลูกได้ตลอดปี', water: 'วันละ 2 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
-  pakbung: { name: 'ผักบุ้งจีน', icon: '🌿', days: 25, germDays: 3, desc: 'โตเร็วมาก ปลูกง่าย', tips: 'แช่เมล็ด 12 ชม.', water: 'วันละ 2-3 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
-  pakchoi: { name: 'ผักกวางตุ้ง', icon: '🥬', days: 35, germDays: 3, desc: 'อายุสั้น โตไว', tips: 'ชอบแดด น้ำสม่ำเสมอ', water: 'วันละ 2 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
-  kaprao: { name: 'กะเพรา', icon: '🌿', days: 35, germDays: 5, desc: 'เก็บได้ต่อเนื่อง', tips: 'ตัดยอดให้แตกกิ่ง', water: 'วันละ 1-2 ครั้ง', light: 'แดดจัด 6-8 ชม.' },
-  horapha: { name: 'โหระพา', icon: '🌿', days: 40, germDays: 5, desc: 'หอม ทำอาหาร', tips: 'ดินระบายน้ำดี', water: 'วันละ 1-2 ครั้ง', light: 'แดดจัด 6-8 ชม.' },
-  pakchi: { name: 'ผักชี', icon: '🌱', days: 45, germDays: 7, desc: 'เครื่องปรุงยอดนิยม', tips: 'บดเมล็ดก่อนเพาะ', water: 'วันละ 2 ครั้ง', light: 'แดดรำไร 3-4 ชม.' },
-  tonhom: { name: 'ต้นหอม', icon: '🌱', days: 35, germDays: 5, desc: 'ใช้พื้นที่น้อย', tips: 'ปลูกจากหัวได้', water: 'วันละ 1-2 ครั้ง', light: 'แดดรำไร 4-5 ชม.' }
+  kana: { name: 'คะน้า', icon: '🥬', days: 50, germDays: 4, hydroDays: 40, desc: 'ผักยอดนิยม วิตามินสูง', tips: 'ปลูกได้ตลอดปี', water: 'วันละ 2 ครั้ง', light: '5-6 ชม.' },
+  pakbung: { name: 'ผักบุ้งจีน', icon: '🌿', days: 25, germDays: 3, hydroDays: 20, desc: 'โตเร็วมาก ปลูกง่าย', tips: 'แช่เมล็ด 12 ชม.', water: 'วันละ 2-3 ครั้ง', light: '5-6 ชม.' },
+  pakchoi: { name: 'ผักกวางตุ้ง', icon: '🥬', days: 35, germDays: 3, hydroDays: 28, desc: 'อายุสั้น โตไว', tips: 'ชอบแดด น้ำสม่ำเสมอ', water: 'วันละ 2 ครั้ง', light: '5-6 ชม.' },
+  pakchi: { name: 'ผักชี', icon: '🌱', days: 45, germDays: 7, hydroDays: 35, desc: 'เครื่องปรุงยอดนิยม', tips: 'บดเมล็ดก่อนเพาะ', water: 'วันละ 2 ครั้ง', light: '3-4 ชม.' }
+};
+
+const hydroSystems = {
+  nft: { name: 'NFT', fullName: 'Nutrient Film Technique', icon: '🌊', desc: 'น้ำไหลเป็นฟิล์มบาง', pros: ['ประหยัดน้ำ', 'รากได้ออกซิเจน', 'เหมาะผักใบ'], cons: ['ไฟดับ=ตาย', 'ต้องมีปั๊ม'] },
+  dwc: { name: 'DWC', fullName: 'Deep Water Culture', icon: '🫧', desc: 'รากจมน้ำ + ปั๊มอากาศ', pros: ['ต้นโตไว', 'ดูแลง่าย', 'ผักใบ/ผลไม้'], cons: ['ใช้น้ำเยอะ', 'ต้องเปลี่ยนน้ำ'] },
+  kratky: { name: 'Kratky', fullName: 'Kratky Method', icon: '🪣', desc: 'ไม่ใช้ปั๊ม น้ำนิ่ง', pros: ['ไม่ใช้ไฟ', 'ราคาถูก', 'ง่ายมาก'], cons: ['ไม่เติมน้ำ', 'ผักเล็กเท่านั้น'] },
+  drip: { name: 'Drip', fullName: 'Drip System', icon: '💧', desc: 'หยดน้ำที่โคนต้น', pros: ['ประหยัดน้ำ', 'ปรับได้', 'ทุกขนาด'], cons: ['ท่ออุดตัน', 'ซับซ้อน'] }
 };
 
 const bioProducts = {
-  em: { name: 'EM จุลินทรีย์', icon: '🦠', color: 'em', fullName: 'Effective Microorganisms', ratio: '1 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 5-7 วัน', how: 'รดราดที่โคนต้นและใบ', benefits: ['ปรับสภาพดิน', 'ย่อยสลายอินทรียวัตถุ', 'ช่วยดูดซึมธาตุอาหาร', 'ป้องกันโรคในดิน'], tips: 'ราดดินก่อนปลูก 7 วัน', storage: 'เก็บ 25-45°C ได้ 6 เดือน' },
-  tricho: { name: 'ไตรโคเดอร์มา', icon: '🍄', color: 'tricho', fullName: 'Trichoderma', ratio: '25 กรัม : น้ำ 20 ลิตร', when: 'ทุก 5-7 วัน ช่วงเย็น', how: 'ฉีดพ่นใบ กิ่ง ลำต้น', benefits: ['ป้องกันรากเน่า', 'ป้องกันเน่าคอดิน', 'ป้องกันใบไหม้', 'กระตุ้นภูมิคุ้มกัน'], tips: 'คลุกเมล็ด 10g:1kg', storage: 'ตู้เย็น 1 ปี' },
-  beauveria: { name: 'บิวเวอเรีย', icon: '🦟', color: 'beau', fullName: 'Beauveria bassiana', ratio: '50 กรัม : น้ำ 20 ลิตร', when: 'พบแมลง ทุก 5-7 วัน', how: 'ฉีดพ่นที่แมลงอยู่', benefits: ['กำจัดเพลี้ยอ่อน', 'กำจัดเพลี้ยแป้ง', 'กำจัดแมลงหวี่ขาว', 'กำจัดเพลี้ยไฟ'], tips: 'ฉีดช่วงเย็น', storage: 'ที่เย็นแห้ง 3-6 เดือน' },
-  metarhizium: { name: 'เมตาไรเซียม', icon: '🪲', color: 'meta', fullName: 'Metarhizium anisopliae', ratio: '50 กรัม : น้ำ 20 ลิตร', when: 'พบแมลง ทุก 5-7 วัน', how: 'ฉีดพ่นหรือราดดิน', benefits: ['กำจัดด้วงหมัดผัก', 'กำจัดไรแดง', 'กำจัดหนอนกอ', 'กำจัดแมลงปีกแข็ง'], tips: 'ราดดินกำจัดหนอน', storage: 'ที่เย็นแห้ง 3-6 เดือน' },
-  hormone: { name: 'ฮอร์โมนพืช', icon: '🌿', color: 'hormone', fullName: 'ฮอร์โมนผลไม้', ratio: '4-5 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 7-10 วัน', how: 'ฉีดพ่นทั่วต้น', benefits: ['เร่งการเติบโต', 'ผักอวบหวานกรอบ', 'เพิ่มผลผลิต', 'ใบเขียวสวย'], tips: 'ทำเอง: มะละกอ+ฟักทอง+กล้วย+EM หมัก 7-8 วัน', storage: 'ขวดปิดสนิท 3 เดือน' }
+  em: { name: 'EM จุลินทรีย์', icon: '🦠', color: 'em', fullName: 'Effective Microorganisms', ratio: '1:10 ลิตร', when: 'ทุก 5-7 วัน', benefits: ['ปรับสภาพดิน', 'ย่อยสลายอินทรียวัตถุ', 'ช่วยดูดซึมธาตุอาหาร'] },
+  tricho: { name: 'ไตรโคเดอร์มา', icon: '🍄', color: 'tricho', fullName: 'Trichoderma', ratio: '25g:20 ลิตร', when: 'ทุก 5-7 วัน', benefits: ['ป้องกันรากเน่า', 'ป้องกันเน่าคอดิน', 'กระตุ้นภูมิคุ้มกัน'] },
+  beauveria: { name: 'บิวเวอเรีย', icon: '🦟', color: 'beau', fullName: 'Beauveria bassiana', ratio: '50g:20 ลิตร', when: 'พบแมลง', benefits: ['กำจัดเพลี้ยอ่อน', 'กำจัดแมลงหวี่ขาว'] },
+  metarhizium: { name: 'เมตาไรเซียม', icon: '🪲', color: 'meta', fullName: 'Metarhizium', ratio: '50g:20 ลิตร', when: 'พบแมลง', benefits: ['กำจัดด้วงหมัดผัก', 'กำจัดไรแดง'] },
+  hormone: { name: 'ฮอร์โมนพืช', icon: '🌿', color: 'hormone', fullName: 'ฮอร์โมนผลไม้', ratio: '4-5 ช้อน:10 ลิตร', when: 'ทุก 7-10 วัน', benefits: ['เร่งการเติบโต', 'ผักอวบหวานกรอบ'] }
+};
+
+const hydroNutrients = {
+  seedling: { stage: 'ต้นกล้า', days: '1-7', ec: '0.8-1.0', ph: '5.8-6.2', ratioA: 2.5, ratioB: 2.5 },
+  vegetative: { stage: 'เติบโต', days: '8-21', ec: '1.2-1.6', ph: '5.5-6.0', ratioA: 5, ratioB: 5 },
+  mature: { stage: 'ใกล้เก็บ', days: '22+', ec: '1.6-2.0', ph: '5.5-6.0', ratioA: 5, ratioB: 5 }
 };
 
 // ==================== State ====================
-let plots = [], currentPlotId = null, chartInstance = null;
+let plots = [], currentPlotId = null, chartInstance = null, guideTab = 'organic';
 const $ = id => document.getElementById(id);
 const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
@@ -233,40 +260,36 @@ const getDaysDiff = (d1, d2) => Math.floor((new Date(d1) - new Date(d2)) / 86400
 const today = new Date(); today.setHours(0,0,0,0);
 const todayKey = today.toISOString().split('T')[0];
 
-// ==================== Firebase Functions ====================
+// ==================== Storage (Firebase) ====================
 function updateSyncBadge(status, text) {
   const badge = $('syncBadge');
-  badge.className = 'sync-badge ' + status;
+  if (!badge) return;
+  const colors = { '': { bg: '#e8f5e9', c: '#2e7d32' }, syncing: { bg: '#fff3e0', c: '#e65100' }, error: { bg: '#ffebee', c: '#c62828' } };
+  const col = colors[status] || colors[''];
+  badge.style.background = col.bg;
+  badge.style.color = col.c;
   badge.innerHTML = text;
 }
 
-function saveToFirebase() {
+function saveData() {
   if (!db) return;
   updateSyncBadge('syncing', '🔄 กำลังบันทึก...');
-  db.ref('veggie-app-v3').set({ plots, currentPlotId })
+  db.ref('veggie-hydro-v1').set({ plots, currentPlotId })
     .then(() => updateSyncBadge('', '✅ บันทึกแล้ว'))
-    .catch(err => updateSyncBadge('error', '❌ บันทึกล้มเหลว'));
+    .catch(() => updateSyncBadge('error', '❌ บันทึกล้มเหลว'));
 }
 
-function loadFromFirebase() {
+function loadData() {
   if (!db) return;
-  db.ref('veggie-app-v3').on('value', snap => {
-    const data = snap.val();
-    if (data) {
-      plots = (data.plots || []).map(p => ({
-        ...p,
-        completedTasks: p.completedTasks || {},
-        dailyLogs: p.dailyLogs || {},
-        growthLogs: p.growthLogs || [],
-        phases: p.phases || []
-      }));
-      currentPlotId = data.currentPlotId || (plots[0]?.id || null);
+  db.ref('veggie-hydro-v1').on('value', snap => {
+    const d = snap.val();
+    if (d) {
+      plots = (d.plots || []).map(p => ({ ...p, completedTasks: p.completedTasks || {}, dailyLogs: p.dailyLogs || {}, growthLogs: p.growthLogs || [] }));
+      currentPlotId = d.currentPlotId || (plots[0]?.id || null);
     }
     updateSyncBadge('', '✅ เชื่อมต่อแล้ว');
     renderAll();
-  }, err => {
-    updateSyncBadge('error', '❌ โหลดล้มเหลว');
-  });
+  }, () => updateSyncBadge('error', '❌ โหลดล้มเหลว'));
 }
 
 // ==================== Navigation ====================
@@ -291,25 +314,46 @@ function renderAll() { renderPlotSelector(); renderCurrentTab(); }
 
 // ==================== Plot Management ====================
 function renderPlotSelector() {
-  let html = plots.map(p => `<button class="plot-btn ${p.id === currentPlotId ? 'active' : ''}" onclick="selectPlot('${p.id}')">${p.veggie?.icon || '🌱'} ${p.name}</button>`).join('');
+  let html = plots.map(p => `<button class="plot-btn ${p.type === 'hydro' ? 'hydro' : ''} ${p.id === currentPlotId ? 'active' : ''}" onclick="selectPlot('${p.id}')">${p.type === 'hydro' ? '💧' : '🌱'} ${p.name}</button>`).join('');
   html += `<button class="plot-btn add-plot-btn" onclick="showAddPlotModal()">➕ เพิ่มแปลง</button>`;
   $('plotSelector').innerHTML = html;
 }
 
-function selectPlot(id) { currentPlotId = id; saveToFirebase(); renderAll(); }
+function selectPlot(id) { currentPlotId = id; saveData(); renderAll(); }
 function getCurrentPlot() { return plots.find(p => p.id === currentPlotId); }
 
 function showAddPlotModal() {
   $('modalContent').innerHTML = `
-    <h2>🌱 เพิ่มแปลงผักใหม่</h2>
+    <h2>🌱 เพิ่มแปลงใหม่</h2>
+    <div class="type-selector">
+      <div class="type-btn active" onclick="selectType('organic', this)">
+        <div class="icon">🌱</div>
+        <div class="name">อินทรีย์ (ดิน)</div>
+        <div class="desc">ใช้ชีวภัณฑ์</div>
+      </div>
+      <div class="type-btn hydro" onclick="selectType('hydro', this)">
+        <div class="icon">💧</div>
+        <div class="name">ไฮโดรโปนิกส์</div>
+        <div class="desc">สารละลายธาตุอาหาร</div>
+      </div>
+    </div>
+    <input type="hidden" id="plotType" value="organic">
     <div class="form-group"><label>ชื่อแปลง</label><input type="text" id="plotName" placeholder="เช่น แปลง A"></div>
     <div class="form-row">
-      <div class="form-group"><label>ประเภท</label><select id="category" onchange="updateVeggieOpts()"><option value="">เลือก...</option><option value="salad">🥗 ผักสลัด</option><option value="thai">🌿 ผักไทย</option></select></div>
+      <div class="form-group"><label>ประเภทผัก</label><select id="category" onchange="updateVeggieOpts()"><option value="">เลือก...</option><option value="salad">🥗 ผักสลัด</option><option value="thai">🌿 ผักไทย</option></select></div>
       <div class="form-group"><label>ชนิด</label><select id="veggieType"><option value="">เลือก...</option></select></div>
     </div>
-    <div class="form-group"><label>📅 วันเริ่มปลูก</label><input type="date" id="startDate" value="${todayKey}"></div>
+    <div id="hydroSystemDiv" class="form-group hidden"><label>💧 ระบบไฮโดร</label><select id="hydroSystem"><option value="">เลือก...</option>${Object.entries(hydroSystems).map(([k,v]) => `<option value="${k}">${v.icon} ${v.name} - ${v.desc}</option>`).join('')}</select></div>
+    <div class="form-group"><label>📅 วันเริ่ม</label><input type="date" id="startDate" value="${todayKey}"></div>
     <div class="btn-row"><button class="btn" onclick="createPlot()">🚀 สร้างแปลง</button><button class="btn btn-danger" onclick="closeModal()">ยกเลิก</button></div>`;
   $('modal').classList.remove('hidden');
+}
+
+function selectType(type, el) {
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  $('plotType').value = type;
+  $('hydroSystemDiv').classList.toggle('hidden', type !== 'hydro');
 }
 
 function updateVeggieOpts() {
@@ -321,34 +365,52 @@ function updateVeggieOpts() {
 }
 
 function createPlot() {
+  const type = $('plotType').value;
   const name = $('plotName').value.trim() || `แปลง ${plots.length + 1}`;
-  const cat = $('category').value, type = $('veggieType').value, startDateStr = $('startDate').value;
-  if (!cat || !type || !startDateStr) { alert('กรุณาเลือกให้ครบ'); return; }
+  const cat = $('category').value, veggieKey = $('veggieType').value, startDateStr = $('startDate').value;
+  const hydroSys = type === 'hydro' ? $('hydroSystem').value : null;
   
-  const veggie = (cat === 'salad' ? saladVeggies : thaiVeggies)[type];
+  if (!cat || !veggieKey || !startDateStr) { alert('กรุณาเลือกให้ครบ'); return; }
+  if (type === 'hydro' && !hydroSys) { alert('กรุณาเลือกระบบไฮโดร'); return; }
+  
+  const veggie = (cat === 'salad' ? saladVeggies : thaiVeggies)[veggieKey];
   const start = new Date(startDateStr);
-  const phases = generatePhases(veggie, start);
+  const totalDays = type === 'hydro' ? veggie.hydroDays : veggie.days;
+  const phases = type === 'hydro' ? generateHydroPhases(veggie, start) : generateOrganicPhases(veggie, start);
   
-  const newPlot = { id: genId(), name, veggie, startDate: start.toISOString(), phases, completedTasks: {}, dailyLogs: {}, growthLogs: [] };
+  const newPlot = { 
+    id: genId(), name, type, veggie: {...veggie, totalDays}, 
+    hydroSystem: hydroSys, startDate: start.toISOString(), 
+    phases, completedTasks: {}, dailyLogs: {}, growthLogs: [] 
+  };
   plots.push(newPlot);
   currentPlotId = newPlot.id;
-  saveToFirebase(); closeModal(); renderAll();
+  saveData(); closeModal(); renderAll();
 }
 
-function generatePhases(veggie, start) {
+function generateOrganicPhases(veggie, start) {
   return [
-    { id: 'prep', day: -7, name: '🔧 เตรียมดิน', desc: 'พรวนดิน ผสมปุ๋ย ราด EM', bio: ['em', 'tricho'], tasks: ['พรวนดินร่วนซุย', 'ผสมดิน:ปุ๋ย:ขุยมะพร้าว 2:1:1', 'ราด EM', 'โรยไตรโคเดอร์มา', 'คลุมฟาง', 'รอหมัก 7 วัน'] },
-    { id: 'plant', day: 0, name: '🌱 วันปลูก', desc: 'คลุกเมล็ดด้วยไตรโค', bio: ['tricho'], tasks: ['คลุกเมล็ดไตรโค', 'หยอดเมล็ด', 'กลบดินบาง', 'รดน้ำชุ่ม', 'วางที่ร่ม', 'ติดป้ายชื่อ'] },
-    { id: 'germ', day: veggie.germDays, name: '🌿 เมล็ดงอก', desc: 'ต้นกล้าโผล่', bio: ['em'], tasks: ['ตรวจต้นกล้า', 'นับจำนวน', 'ย้ายรับแสง', 'รด EM', 'ถ่ายรูป 📸'] },
-    { id: 'care1', day: 7, name: '💧 สัปดาห์ 1', desc: 'รด EM ฉีดไตรโค', bio: ['em', 'tricho'], tasks: ['รดน้ำเช้า-เย็น', 'รด EM', 'ฉีดไตรโค', 'วัดความสูง', 'ตรวจแมลง'] },
-    { id: 'hormone1', day: 10, name: '🌿 ฮอร์โมน 1', desc: 'ฉีดฮอร์โมนเร่งใบ', bio: ['hormone'], tasks: ['เตรียมฮอร์โมน', 'ฉีดทั่วต้น', 'บันทึกความสูง', 'ถ่ายรูป'] },
-    { id: 'transplant', day: 14, name: '🪴 ย้ายปลูก', desc: 'ย้ายลงแปลง', bio: ['tricho'], tasks: ['เตรียมหลุม', 'ใส่ไตรโครองก้น', 'ย้ายต้นกล้า', 'รดน้ำ', 'พรางแสง'] },
-    { id: 'pest', day: 17, name: '🦟 ตรวจแมลง', desc: 'ฉีดชีวภัณฑ์', bio: ['beauveria', 'metarhizium'], tasks: ['ตรวจใต้ใบ', 'ตรวจหนอน', 'ฉีดบิวเวอเรีย', 'ฉีดเมตาไรเซียม'] },
-    { id: 'care2', day: 21, name: '💧 สัปดาห์ 3', desc: 'EM + ไตรโค รอบ 2', bio: ['em', 'tricho'], tasks: ['รด EM', 'ฉีดไตรโค', 'พรวนดิน', 'กำจัดวัชพืช', 'วัดความสูง'] },
-    { id: 'hormone2', day: 25, name: '🌿 ฮอร์โมน 2', desc: 'ฉีดฮอร์โมน พรวนดิน', bio: ['hormone'], tasks: ['ฉีดฮอร์โมน', 'พรวนดิน', 'ตรวจโรค', 'ถ่ายรูป'] },
-    { id: 'grow', day: Math.floor(veggie.days * 0.8), name: '🥬 ใกล้เก็บ', desc: 'ต้นโตเต็มที่', bio: ['tricho'], tasks: ['ตรวจศัตรูพืช', 'รด EM สุดท้าย', 'ถ่ายรูป', 'เตรียมอุปกรณ์'] },
-    { id: 'stop', day: veggie.days - 5, name: '⏸️ หยุดชีวภัณฑ์', desc: 'หยุดก่อนเก็บ', bio: [], tasks: ['หยุดฉีดทั้งหมด', 'รดน้ำเปล่า', 'เตรียมตะกร้า', 'วางแผนเก็บ'] },
-    { id: 'harvest', day: veggie.days, name: '🎉 เก็บเกี่ยว!', desc: 'เก็บผักสด!', bio: [], tasks: ['รดน้ำก่อนเก็บ', 'เก็บตอนเช้า', 'ตัดที่โคน', 'ล้างสะอาด', 'ชั่งน้ำหนัก', 'ถ่ายรูป 🎊'] }
+    { id: 'prep', day: -7, name: '🔧 เตรียมดิน', desc: 'พรวนดิน ผสมปุ๋ย ราด EM', bio: ['em', 'tricho'], tasks: ['พรวนดินร่วนซุย', 'ผสมดิน:ปุ๋ย:ขุยมะพร้าว', 'ราด EM', 'โรยไตรโคเดอร์มา', 'คลุมฟาง'] },
+    { id: 'plant', day: 0, name: '🌱 วันปลูก', desc: 'คลุกเมล็ดด้วยไตรโค', bio: ['tricho'], tasks: ['คลุกเมล็ดไตรโค', 'หยอดเมล็ด', 'กลบดินบาง', 'รดน้ำชุ่ม'] },
+    { id: 'germ', day: veggie.germDays, name: '🌿 เมล็ดงอก', desc: 'ต้นกล้าโผล่', bio: ['em'], tasks: ['ตรวจต้นกล้า', 'ย้ายรับแสง', 'รด EM'] },
+    { id: 'care1', day: 7, name: '💧 สัปดาห์ 1', desc: 'รด EM ฉีดไตรโค', bio: ['em', 'tricho'], tasks: ['รดน้ำเช้า-เย็น', 'รด EM', 'ฉีดไตรโค', 'ตรวจแมลง'] },
+    { id: 'transplant', day: 14, name: '🪴 ย้ายปลูก', desc: 'ย้ายลงแปลง', bio: ['tricho'], tasks: ['เตรียมหลุม', 'ใส่ไตรโครองก้น', 'ย้ายต้นกล้า', 'รดน้ำ'] },
+    { id: 'care2', day: 21, name: '💧 สัปดาห์ 3', desc: 'EM + ไตรโค รอบ 2', bio: ['em', 'tricho', 'hormone'], tasks: ['รด EM', 'ฉีดไตรโค', 'ฉีดฮอร์โมน', 'กำจัดวัชพืช'] },
+    { id: 'grow', day: Math.floor(veggie.days * 0.8), name: '🥬 ใกล้เก็บ', desc: 'ต้นโตเต็มที่', bio: [], tasks: ['ตรวจศัตรูพืช', 'เตรียมอุปกรณ์'] },
+    { id: 'harvest', day: veggie.days, name: '🎉 เก็บเกี่ยว!', desc: 'เก็บผักสด!', bio: [], tasks: ['เก็บตอนเช้า', 'ตัดที่โคน', 'ล้างสะอาด', 'ชั่งน้ำหนัก'] }
+  ].map(p => ({ ...p, date: addDays(start, p.day).toISOString() }));
+}
+
+function generateHydroPhases(veggie, start) {
+  const days = veggie.hydroDays;
+  return [
+    { id: 'seed', day: 0, name: '🌱 เพาะเมล็ด', desc: 'เพาะในฟองน้ำ/ร็อควูล', bio: [], tasks: ['เตรียมฟองน้ำ', 'แช่น้ำเปล่า', 'หยอดเมล็ด', 'คลุมมืด 2-3 วัน'], hydro: { ec: '0', ph: '6.0' } },
+    { id: 'germ', day: veggie.germDays, name: '🌿 เมล็ดงอก', desc: 'ย้ายรับแสง', bio: [], tasks: ['ตรวจรากงอก', 'ย้ายรับแสง', 'เริ่มให้สารอาหาร'], hydro: { ec: '0.8-1.0', ph: '5.8-6.2' } },
+    { id: 'seedling', day: 7, name: '🪴 ต้นกล้า', desc: 'ย้ายลงระบบ', bio: [], tasks: ['ตรวจราก 3-5 ซม.', 'ย้ายลงระบบ', 'ตรวจ EC/pH', 'ตั้งเวลาปั๊ม'], hydro: { ec: '1.0-1.2', ph: '5.5-6.0' } },
+    { id: 'veg1', day: 14, name: '🌱 เติบโต 1', desc: 'เพิ่มสารอาหาร', bio: [], tasks: ['เพิ่ม EC', 'ตรวจใบ', 'เติมน้ำ', 'ล้างราก'], hydro: { ec: '1.2-1.4', ph: '5.5-6.0' } },
+    { id: 'veg2', day: 21, name: '🥬 เติบโต 2', desc: 'ต้นแข็งแรง', bio: [], tasks: ['ตรวจ EC/pH', 'เปลี่ยนน้ำ', 'ตัดใบเสีย', 'ถ่ายรูป'], hydro: { ec: '1.4-1.6', ph: '5.5-6.0' } },
+    { id: 'mature', day: Math.floor(days * 0.85), name: '🌿 ใกล้เก็บ', desc: 'ลด EC ก่อนเก็บ', bio: [], tasks: ['ลด EC', 'ตรวจคุณภาพ', 'เตรียมเก็บ'], hydro: { ec: '1.0-1.2', ph: '5.8-6.2' } },
+    { id: 'harvest', day: days, name: '🎉 เก็บเกี่ยว!', desc: 'เก็บผักสด!', bio: [], tasks: ['เก็บตอนเช้า', 'ตัดที่โคน', 'ล้างราก', 'ชั่งน้ำหนัก'] }
   ].map(p => ({ ...p, date: addDays(start, p.day).toISOString() }));
 }
 
@@ -357,7 +419,7 @@ function deletePlot(id) {
   if (!confirm('ลบแปลงนี้?')) return;
   plots = plots.filter(p => p.id !== id);
   if (currentPlotId === id) currentPlotId = plots[0]?.id || null;
-  saveToFirebase(); renderAll();
+  saveData(); renderAll();
 }
 
 // ==================== Phase & Tasks ====================
@@ -368,8 +430,7 @@ function getCurrentPhase(plot) {
 function getNextPhase(plot) { return plot?.phases.find(p => new Date(p.date) > today); }
 function getPhaseCompletion(plot, phase) {
   if (!plot || !phase || !phase.tasks) return 0;
-  const tasks = plot.completedTasks || {};
-  const done = phase.tasks.filter((_, i) => tasks[`${phase.id}-${i}`]).length;
+  const done = phase.tasks.filter((_, i) => plot.completedTasks?.[`${phase.id}-${i}`]).length;
   return Math.round((done / phase.tasks.length) * 100);
 }
 function toggleTask(plotId, phaseId, taskIdx) {
@@ -377,7 +438,7 @@ function toggleTask(plotId, phaseId, taskIdx) {
   if (!plot) return;
   if (!plot.completedTasks) plot.completedTasks = {};
   plot.completedTasks[`${phaseId}-${taskIdx}`] = !plot.completedTasks[`${phaseId}-${taskIdx}`];
-  saveToFirebase(); renderCurrentTab();
+  saveData(); renderCurrentTab();
 }
 function logDaily(plotId, type) {
   const plot = plots.find(p => p.id === plotId);
@@ -385,38 +446,37 @@ function logDaily(plotId, type) {
   if (!plot.dailyLogs) plot.dailyLogs = {};
   if (!plot.dailyLogs[todayKey]) plot.dailyLogs[todayKey] = {};
   plot.dailyLogs[todayKey][type] = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  saveToFirebase(); renderCurrentTab();
+  saveData(); renderCurrentTab();
 }
 
 // ==================== Growth Log ====================
-function validateNum(val, min = 0, max = 1000) {
-  const num = parseFloat(val);
-  if (isNaN(num)) return { ok: false, err: 'กรอกตัวเลข' };
-  if (num < min) return { ok: false, err: `ต้อง >= ${min}` };
-  if (num > max) return { ok: false, err: `ต้อง <= ${max}` };
-  return { ok: true, val: num };
-}
-
 function addGrowthLog(plotId) {
   const plot = plots.find(p => p.id === plotId);
   if (!plot) return;
   
-  const hInput = $('newHeight'), lInput = $('newLeaves'), pInput = $('problemLog');
-  hInput.classList.remove('error'); lInput.classList.remove('error');
-  document.querySelectorAll('.error-msg').forEach(e => e.remove());
+  const h = $('newHeight')?.value.trim(), l = $('newLeaves')?.value.trim();
+  const ec = $('newEC')?.value.trim(), ph = $('newPH')?.value.trim();
+  const p = $('problemLog')?.value.trim();
   
-  const h = hInput.value.trim(), l = lInput.value.trim(), p = pInput.value.trim();
-  if (!h && !l) { alert('กรอกความสูงหรือจำนวนใบ'); return; }
-  
-  let hasErr = false, vH = null, vL = null;
-  if (h) { const r = validateNum(h, 0, 500); if (!r.ok) { hInput.classList.add('error'); hInput.insertAdjacentHTML('afterend', `<div class="error-msg">${r.err}</div>`); hasErr = true; } else vH = r.val; }
-  if (l) { const r = validateNum(l, 0, 1000); if (!r.ok) { lInput.classList.add('error'); lInput.insertAdjacentHTML('afterend', `<div class="error-msg">${r.err}</div>`); hasErr = true; } else vL = r.val; }
-  if (hasErr) return;
+  if (!h && !l && !ec && !ph) { alert('กรอกข้อมูลอย่างน้อย 1 อย่าง'); return; }
   
   if (!plot.growthLogs) plot.growthLogs = [];
-  plot.growthLogs.push({ id: genId(), date: new Date().toISOString(), day: getDaysDiff(today, plot.startDate) + 1, height: vH, leaves: vL, problem: p });
-  hInput.value = ''; lInput.value = ''; pInput.value = '';
-  saveToFirebase(); renderCurrentTab();
+  plot.growthLogs.push({ 
+    id: genId(), date: new Date().toISOString(), 
+    day: getDaysDiff(today, plot.startDate) + 1, 
+    height: h ? parseFloat(h) : null, 
+    leaves: l ? parseInt(l) : null,
+    ec: ec ? parseFloat(ec) : null,
+    ph: ph ? parseFloat(ph) : null,
+    problem: p 
+  });
+  
+  if ($('newHeight')) $('newHeight').value = '';
+  if ($('newLeaves')) $('newLeaves').value = '';
+  if ($('newEC')) $('newEC').value = '';
+  if ($('newPH')) $('newPH').value = '';
+  if ($('problemLog')) $('problemLog').value = '';
+  saveData(); renderCurrentTab();
 }
 
 function deleteGrowthLog(plotId, logId) {
@@ -424,7 +484,7 @@ function deleteGrowthLog(plotId, logId) {
   const plot = plots.find(p => p.id === plotId);
   if (!plot) return;
   plot.growthLogs = plot.growthLogs.filter(l => l.id !== logId);
-  saveToFirebase(); renderCurrentTab();
+  saveData(); renderCurrentTab();
 }
 
 // ==================== Render Functions ====================
@@ -432,15 +492,58 @@ function renderPlanner() {
   const plot = getCurrentPlot();
   if (!plot) { $('plannerContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแปลง</p><p style="font-size:0.8em;color:#666;">คลิก "➕ เพิ่มแปลง"</p></div>`; return; }
   
+  const totalDays = plot.veggie.totalDays || plot.veggie.days;
   const dayNum = getDaysDiff(today, plot.startDate) + 1;
-  const daysLeft = Math.max(0, getDaysDiff(addDays(new Date(plot.startDate), plot.veggie.days), today));
-  const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(new Date(plot.startDate), -7)) / (plot.veggie.days + 7)) * 100)));
+  const daysLeft = Math.max(0, totalDays - dayNum + 1);
+  const pct = Math.min(100, Math.max(0, Math.round((dayNum / totalDays) * 100)));
+  const isHydro = plot.type === 'hydro';
   
-  let html = `<div class="plot-card"><div class="header"><div class="icon">${plot.veggie.icon}</div><div><div class="title">${plot.name} - ${plot.veggie.name}</div><div class="dates">เริ่ม ${formatDate(plot.startDate)} → เก็บ ${formatDate(addDays(new Date(plot.startDate), plot.veggie.days))}</div></div></div><div class="progress"><div class="bar"><div class="fill" style="width:${pct}%"></div></div><div class="text"><span>วันที่ ${dayNum} • เหลือ ${daysLeft} วัน</span><span>${pct}%</span></div></div></div>`;
+  let html = `<div class="plot-card ${isHydro ? 'hydro' : 'organic'}">
+    <div class="header">
+      <div class="icon">${plot.veggie.icon}</div>
+      <div>
+        <div class="title">${plot.name} - ${plot.veggie.name} ${isHydro ? `<span class="system-badge">${hydroSystems[plot.hydroSystem]?.icon} ${hydroSystems[plot.hydroSystem]?.name}</span>` : ''}</div>
+        <div class="dates">เริ่ม ${formatDate(plot.startDate)} → เก็บ ${formatDate(addDays(new Date(plot.startDate), totalDays))}</div>
+      </div>
+    </div>
+    <div class="progress">
+      <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="text"><span>วันที่ ${dayNum} • เหลือ ${daysLeft} วัน</span><span>${pct}%</span></div>
+    </div>
+  </div>`;
   
-  html += `<div class="card"><h2>🌱 ข้อมูลผัก</h2><div class="veggie-info"><div class="veggie-icon">${plot.veggie.icon}</div><div class="veggie-details"><div class="veggie-name">${plot.veggie.name}</div><div class="veggie-desc">${plot.veggie.desc}</div><div class="veggie-grid"><div class="veggie-stat">⏱️ ${plot.veggie.days} วัน</div><div class="veggie-stat">🌱 งอก ${plot.veggie.germDays} วัน</div><div class="veggie-stat">💧 ${plot.veggie.water}</div><div class="veggie-stat">☀️ ${plot.veggie.light}</div></div><div class="veggie-tip">💡 ${plot.veggie.tips}</div></div></div></div>`;
+  html += `<div class="card ${isHydro ? 'hydro' : ''}"><h2>${isHydro ? '💧' : '🌱'} ข้อมูลผัก</h2>
+    <div style="display:flex;gap:10px;">
+      <div style="font-size:2.5em;">${plot.veggie.icon}</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;color:${isHydro ? '#1565c0' : '#2e7d32'};">${plot.veggie.name}</div>
+        <div style="font-size:0.75em;color:#666;margin:4px 0;">${plot.veggie.desc}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;">
+          <div style="background:#f5f5f5;padding:6px 8px;border-radius:8px;font-size:0.7em;">⏱️ ${totalDays} วัน</div>
+          <div style="background:#f5f5f5;padding:6px 8px;border-radius:8px;font-size:0.7em;">🌱 งอก ${plot.veggie.germDays} วัน</div>
+          <div style="background:#f5f5f5;padding:6px 8px;border-radius:8px;font-size:0.7em;">☀️ ${plot.veggie.light}</div>
+          <div style="background:#f5f5f5;padding:6px 8px;border-radius:8px;font-size:0.7em;">${isHydro ? '💧 ไฮโดร' : '🌱 ดิน'}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
   
-  html += `<div class="btn-row" style="margin-bottom:10px;"><button class="btn btn-blue btn-sm" onclick="exportPDF('${plot.id}')">📤 Export PDF</button><button class="btn btn-danger btn-sm" onclick="deletePlot('${plot.id}')">🗑️ ลบแปลง</button></div>`;
+  if (isHydro) {
+    const sys = hydroSystems[plot.hydroSystem];
+    html += `<div class="card hydro"><h2>💧 ระบบ ${sys.name}</h2>
+      <p style="font-size:0.8em;color:#666;margin-bottom:8px;">${sys.fullName} - ${sys.desc}</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${sys.pros.map(p => `<span style="background:#c8e6c9;color:#2e7d32;padding:4px 8px;border-radius:8px;font-size:0.7em;">✓ ${p}</span>`).join('')}
+        ${sys.cons.map(c => `<span style="background:#ffcdd2;color:#c62828;padding:4px 8px;border-radius:8px;font-size:0.7em;">⚠ ${c}</span>`).join('')}
+      </div>
+      <div class="nutrient-guide">
+        <h3>📊 ค่าแนะนำตามระยะ</h3>
+        ${Object.values(hydroNutrients).map(n => `<div class="nutrient-row"><span>${n.stage} (วัน ${n.days})</span><span>EC: ${n.ec} | pH: ${n.ph}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+  
+  html += `<div class="btn-row" style="margin-bottom:10px;"><button class="btn btn-danger btn-sm" onclick="deletePlot('${plot.id}')">🗑️ ลบแปลง</button></div>`;
   
   $('plannerContent').innerHTML = html;
 }
@@ -450,22 +553,48 @@ function renderToday() {
   if (!plot) { $('todayContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแปลง</p></div>`; return; }
   
   const current = getCurrentPhase(plot), next = getNextPhase(plot);
+  const totalDays = plot.veggie.totalDays || plot.veggie.days;
   const dayNum = getDaysDiff(today, plot.startDate) + 1;
-  const daysLeft = Math.max(0, getDaysDiff(addDays(new Date(plot.startDate), plot.veggie.days), today));
-  const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(new Date(plot.startDate), -7)) / (plot.veggie.days + 7)) * 100)));
+  const daysLeft = Math.max(0, totalDays - dayNum + 1);
+  const pct = Math.min(100, Math.max(0, Math.round((dayNum / totalDays) * 100)));
   const todayLog = (plot.dailyLogs || {})[todayKey] || {};
+  const isHydro = plot.type === 'hydro';
   
-  let html = `<div class="status-card"><h2>📅 ${formatDateFull(today)}</h2><p>วันที่ ${dayNum} - ${plot.name} ${plot.veggie.icon}</p><div class="status-badges"><span class="status-badge">เหลือ ${daysLeft} วัน</span><span class="status-badge">${pct}%</span></div></div>`;
+  let html = `<div class="plot-card ${isHydro ? 'hydro' : 'organic'}">
+    <h2 style="font-size:0.9em;margin-bottom:4px;">📅 ${formatDateFull(today)}</h2>
+    <p style="font-size:0.8em;opacity:0.9;">วันที่ ${dayNum} - ${plot.name} ${plot.veggie.icon}</p>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+      <span style="background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;font-size:0.7em;">เหลือ ${daysLeft} วัน</span>
+      <span style="background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;font-size:0.7em;">${pct}%</span>
+      ${isHydro ? `<span style="background:rgba(255,255,255,0.25);padding:4px 10px;border-radius:12px;font-size:0.7em;">💧 ${hydroSystems[plot.hydroSystem]?.name}</span>` : ''}
+    </div>
+  </div>`;
   
   if (current) {
     const comp = getPhaseCompletion(plot, current);
     const tasks = plot.completedTasks || {};
-    const tasksDoneCount = current.tasks.filter((_, i) => tasks[`${current.id}-${i}`]).length;
-    html += `<div class="card phase-card"><div class="phase-header"><span class="phase-title">${current.name}</span><span class="phase-badge">🎯 ตอนนี้</span></div><p class="phase-desc">${current.desc}</p>${current.bio.length ? `<div class="bio-tags">${current.bio.map(b => `<span class="bio-tag bio-${bioProducts[b].color}">${bioProducts[b].icon} ${bioProducts[b].name}</span>`).join('')}</div>` : ''}<p style="font-size:0.8em;font-weight:600;color:#555;margin-bottom:8px;">📝 (${tasksDoneCount}/${current.tasks.length}):</p><ul class="checklist">${current.tasks.map((t, i) => `<li class="${tasks[`${current.id}-${i}`] ? 'done' : ''}" onclick="toggleTask('${plot.id}', '${current.id}', ${i})"><input type="checkbox" ${tasks[`${current.id}-${i}`] ? 'checked' : ''}><span>${t}</span></li>`).join('')}</ul><div class="progress-wrap"><div class="progress-bar" style="width:${comp}%"></div></div><div class="progress-text"><span>ทำไปแล้ว</span><span>${comp}%</span></div></div>`;
+    html += `<div class="card phase-card ${isHydro ? 'hydro' : ''}">
+      <div class="phase-header">
+        <span class="phase-title">${current.name}</span>
+        <span class="phase-badge ${isHydro ? 'hydro' : ''}">🎯 ตอนนี้</span>
+      </div>
+      <p class="phase-desc">${current.desc}</p>
+      ${current.hydro ? `<div class="hydro-stats" style="margin-bottom:10px;">
+        <div class="hydro-stat"><div class="value">${current.hydro.ec}</div><div class="label">EC แนะนำ</div></div>
+        <div class="hydro-stat"><div class="value">${current.hydro.ph}</div><div class="label">pH แนะนำ</div></div>
+      </div>` : ''}
+      ${current.bio?.length ? `<div class="bio-tags">${current.bio.map(b => `<span class="bio-tag bio-${bioProducts[b].color}">${bioProducts[b].icon} ${bioProducts[b].name}</span>`).join('')}</div>` : ''}
+      <ul class="checklist">${current.tasks.map((t, i) => `<li class="${tasks[`${current.id}-${i}`] ? 'done' : ''}" onclick="toggleTask('${plot.id}', '${current.id}', ${i})"><input type="checkbox" ${tasks[`${current.id}-${i}`] ? 'checked' : ''}><span>${t}</span></li>`).join('')}</ul>
+      <div class="progress-wrap"><div class="progress-bar ${isHydro ? 'hydro' : ''}" style="width:${comp}%"></div></div>
+      <div class="progress-text"><span>ทำไปแล้ว</span><span>${comp}%</span></div>
+    </div>`;
   }
   
-  const quickBtns = [{id:'water_am',icon:'💧',label:'รดน้ำเช้า'},{id:'water_pm',icon:'💧',label:'รดน้ำเย็น'},{id:'check',icon:'🔍',label:'ตรวจต้น'},{id:'em',icon:'🦠',label:'ให้ EM'},{id:'tricho',icon:'🍄',label:'ฉีดไตรโค'},{id:'photo',icon:'📸',label:'ถ่ายรูป'}];
-  html += `<div class="card"><h2>⚡ บันทึกด่วน</h2><div class="quick-btns">${quickBtns.map(item => `<button class="quick-btn ${todayLog[item.id] ? 'done' : ''}" onclick="logDaily('${plot.id}', '${item.id}')"><span class="icon">${item.icon}</span><span class="label">${item.label}</span>${todayLog[item.id] ? `<span class="time">✓ ${todayLog[item.id]}</span>` : ''}</button>`).join('')}</div></div>`;
+  const quickBtns = isHydro 
+    ? [{id:'check_ec',icon:'📊',label:'วัด EC'},{id:'check_ph',icon:'🧪',label:'วัด pH'},{id:'check',icon:'🔍',label:'ตรวจต้น'},{id:'add_nutrient',icon:'💧',label:'เติมสาร'},{id:'change_water',icon:'🔄',label:'เปลี่ยนน้ำ'},{id:'photo',icon:'📸',label:'ถ่ายรูป'}]
+    : [{id:'water_am',icon:'💧',label:'รดน้ำเช้า'},{id:'water_pm',icon:'💧',label:'รดน้ำเย็น'},{id:'check',icon:'🔍',label:'ตรวจต้น'},{id:'em',icon:'🦠',label:'ให้ EM'},{id:'tricho',icon:'🍄',label:'ฉีดไตรโค'},{id:'photo',icon:'📸',label:'ถ่ายรูป'}];
+  
+  html += `<div class="card ${isHydro ? 'hydro' : ''}"><h2>⚡ บันทึกด่วน</h2><div class="quick-btns">${quickBtns.map(item => `<button class="quick-btn ${isHydro ? 'hydro' : ''} ${todayLog[item.id] ? 'done' : ''}" onclick="logDaily('${plot.id}', '${item.id}')"><span class="icon">${item.icon}</span><span class="label">${item.label}</span>${todayLog[item.id] ? `<span class="time">✓ ${todayLog[item.id]}</span>` : ''}</button>`).join('')}</div></div>`;
   
   if (next) html += `<div class="card" style="background:#e3f2fd;border-left:4px solid #2196f3;"><h3 style="color:#1565c0;font-size:0.85em;">⏭️ ถัดไป: ${next.name}</h3><p style="font-size:0.75em;color:#1565c0;">📅 ${formatDate(next.date)} (อีก ${getDaysDiff(new Date(next.date), today)} วัน)</p></div>`;
   
@@ -476,23 +605,32 @@ function renderProgress() {
   const plot = getCurrentPlot();
   if (!plot) { $('progressContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแปลง</p></div>`; return; }
   
+  const totalDays = plot.veggie.totalDays || plot.veggie.days;
   const dayNum = Math.max(1, getDaysDiff(today, plot.startDate) + 1);
-  const daysLeft = Math.max(0, getDaysDiff(addDays(new Date(plot.startDate), plot.veggie.days), today));
-  const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(new Date(plot.startDate), -7)) / (plot.veggie.days + 7)) * 100)));
-  const tasksDone = Object.values(plot.completedTasks).filter(Boolean).length;
+  const daysLeft = Math.max(0, totalDays - dayNum + 1);
+  const pct = Math.min(100, Math.max(0, Math.round((dayNum / totalDays) * 100)));
+  const tasksDone = Object.values(plot.completedTasks || {}).filter(Boolean).length;
   const current = getCurrentPhase(plot);
+  const isHydro = plot.type === 'hydro';
   
-  let html = `<div class="card"><h2>📈 ${plot.name}</h2><div class="stats-grid"><div class="stat-box green"><div class="stat-value">${dayNum}</div><div class="stat-label">วันที่</div></div><div class="stat-box blue"><div class="stat-value">${tasksDone}</div><div class="stat-label">งานเสร็จ</div></div><div class="stat-box purple"><div class="stat-value">${daysLeft}</div><div class="stat-label">วันเหลือ</div></div><div class="stat-box orange"><div class="stat-value">${pct}%</div><div class="stat-label">คืบหน้า</div></div></div></div>`;
+  let html = `<div class="card ${isHydro ? 'hydro' : ''}"><h2>📈 ${plot.name}</h2>
+    <div class="stats-grid">
+      <div class="stat-box green"><div class="stat-value">${dayNum}</div><div class="stat-label">วันที่</div></div>
+      <div class="stat-box blue"><div class="stat-value">${tasksDone}</div><div class="stat-label">งานเสร็จ</div></div>
+      <div class="stat-box purple"><div class="stat-value">${daysLeft}</div><div class="stat-label">วันเหลือ</div></div>
+      <div class="stat-box orange"><div class="stat-value">${pct}%</div><div class="stat-label">คืบหน้า</div></div>
+    </div>
+  </div>`;
   
-  if (plot.growthLogs && plot.growthLogs.length >= 2) html += `<div class="card"><h2>📊 กราฟการเติบโต</h2><div class="chart-container"><canvas id="growthChart"></canvas></div></div>`;
+  if (plot.growthLogs?.length >= 2) html += `<div class="card ${isHydro ? 'hydro' : ''}"><h2>📊 กราฟการเติบโต</h2><div class="chart-container"><canvas id="growthChart"></canvas></div></div>`;
   
-  html += `<div class="card"><h2>📊 ไทม์ไลน์</h2>${plot.phases.map((phase, idx) => {
+  html += `<div class="card ${isHydro ? 'hydro' : ''}"><h2>📊 ไทม์ไลน์</h2>${plot.phases.map((phase, idx) => {
     const isPast = new Date(phase.date) < today, isCurrent = current?.id === phase.id, comp = getPhaseCompletion(plot, phase);
-    return `<div class="timeline-item"><div class="timeline-dot ${isCurrent ? 'current' : isPast ? 'done' : 'future'}">${isPast && comp === 100 ? '✓' : idx + 1}</div><div class="timeline-content ${isCurrent ? 'current' : isPast ? 'done' : 'future'}"><span class="timeline-title">${phase.name}</span>${(isPast || isCurrent) ? `<span class="timeline-percent ${comp === 100 ? 'complete' : 'partial'}">${comp}%</span>` : ''}<div class="timeline-date">${formatDate(phase.date)}</div>${isCurrent ? '<div style="font-size:0.7em;color:#f9a825;margin-top:4px;">👈 ตอนนี้</div>' : ''}</div></div>`;
+    return `<div class="timeline-item"><div class="timeline-dot ${isCurrent ? 'current' : isPast ? 'done' : 'future'}">${isPast && comp === 100 ? '✓' : idx + 1}</div><div class="timeline-content ${isCurrent ? 'current' : isPast ? 'done' : 'future'}"><span class="timeline-title">${phase.name}</span>${(isPast || isCurrent) ? `<span class="timeline-percent ${comp === 100 ? 'complete' : 'partial'}">${comp}%</span>` : ''}<div class="timeline-date">${formatDate(phase.date)}${phase.hydro ? ` | EC: ${phase.hydro.ec}` : ''}</div>${isCurrent ? '<div style="font-size:0.7em;color:#f9a825;margin-top:4px;">👈 ตอนนี้</div>' : ''}</div></div>`;
   }).join('')}</div>`;
   
   $('progressContent').innerHTML = html;
-  if (plot.growthLogs && plot.growthLogs.length >= 2) setTimeout(() => renderChart(plot), 100);
+  if (plot.growthLogs?.length >= 2) setTimeout(() => renderChart(plot), 100);
 }
 
 function renderChart(plot) {
@@ -501,16 +639,20 @@ function renderChart(plot) {
   if (!ctx) return;
   
   const logs = [...plot.growthLogs].sort((a, b) => a.day - b.day);
+  const datasets = [
+    { label: 'ความสูง (ซม.)', data: logs.map(l => l.height), borderColor: '#4caf50', backgroundColor: 'rgba(76,175,80,0.1)', tension: 0.3, fill: true, yAxisID: 'y' }
+  ];
+  
+  if (plot.type === 'hydro' && logs.some(l => l.ec)) {
+    datasets.push({ label: 'EC', data: logs.map(l => l.ec), borderColor: '#ff9800', backgroundColor: 'rgba(255,152,0,0.1)', tension: 0.3, fill: false, yAxisID: 'y1' });
+  } else if (logs.some(l => l.leaves)) {
+    datasets.push({ label: 'จำนวนใบ', data: logs.map(l => l.leaves), borderColor: '#2196f3', backgroundColor: 'rgba(33,150,243,0.1)', tension: 0.3, fill: true, yAxisID: 'y1' });
+  }
+  
   chartInstance = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: logs.map(l => `วัน ${l.day}`),
-      datasets: [
-        { label: 'ความสูง (ซม.)', data: logs.map(l => l.height), borderColor: '#4caf50', backgroundColor: 'rgba(76,175,80,0.1)', tension: 0.3, fill: true, yAxisID: 'y' },
-        { label: 'จำนวนใบ', data: logs.map(l => l.leaves), borderColor: '#2196f3', backgroundColor: 'rgba(33,150,243,0.1)', tension: 0.3, fill: true, yAxisID: 'y1' }
-      ]
-    },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { position: 'left', title: { display: true, text: 'ซม.' } }, y1: { position: 'right', title: { display: true, text: 'ใบ' }, grid: { drawOnChartArea: false } } } }
+    data: { labels: logs.map(l => `วัน ${l.day}`), datasets },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { position: 'left', title: { display: true, text: 'ซม.' } }, y1: { position: 'right', grid: { drawOnChartArea: false } } } }
   });
 }
 
@@ -519,70 +661,70 @@ function renderRecord() {
   if (!plot) { $('recordContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแปลง</p></div>`; return; }
   
   const dayNum = getDaysDiff(today, plot.startDate) + 1;
-  let html = `<div class="card"><h2>📏 บันทึก - ${plot.name}</h2><p style="font-size:0.75em;color:#888;margin-bottom:10px;">วันที่ ${dayNum}</p><div class="form-row"><div class="form-group"><label>📏 ความสูง (ซม.)</label><input type="number" id="newHeight" placeholder="เช่น 5" min="0" max="500"></div><div class="form-group"><label>🍃 จำนวนใบ</label><input type="number" id="newLeaves" placeholder="เช่น 4" min="0" max="1000"></div></div><div class="form-group"><label>⚠️ ปัญหา</label><input type="text" id="problemLog" placeholder="เช่น พบเพลี้ย"></div><button class="btn" onclick="addGrowthLog('${plot.id}')">➕ บันทึก</button></div>`;
+  const isHydro = plot.type === 'hydro';
+  
+  let html = `<div class="card ${isHydro ? 'hydro' : ''}"><h2>📏 บันทึก - ${plot.name}</h2>
+    <p style="font-size:0.75em;color:#888;margin-bottom:10px;">วันที่ ${dayNum}</p>
+    <div class="form-row">
+      <div class="form-group"><label>📏 ความสูง (ซม.)</label><input type="number" id="newHeight" placeholder="เช่น 5" min="0" class="${isHydro ? 'hydro-input' : ''}"></div>
+      <div class="form-group"><label>🍃 จำนวนใบ</label><input type="number" id="newLeaves" placeholder="เช่น 4" min="0" class="${isHydro ? 'hydro-input' : ''}"></div>
+    </div>
+    ${isHydro ? `<div class="form-row">
+      <div class="form-group"><label>📊 EC</label><input type="number" id="newEC" placeholder="เช่น 1.2" step="0.1" class="hydro-input"></div>
+      <div class="form-group"><label>🧪 pH</label><input type="number" id="newPH" placeholder="เช่น 6.0" step="0.1" class="hydro-input"></div>
+    </div>` : ''}
+    <div class="form-group"><label>⚠️ ปัญหา</label><input type="text" id="problemLog" placeholder="เช่น ใบเหลือง" class="${isHydro ? 'hydro-input' : ''}"></div>
+    <button class="btn ${isHydro ? 'btn-blue' : ''}" onclick="addGrowthLog('${plot.id}')">➕ บันทึก</button>
+  </div>`;
   
   const logs = plot.growthLogs || [];
-  html += `<div class="card"><h2>📊 ประวัติ (${logs.length})</h2>${logs.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : logs.slice().reverse().map(log => `<div class="growth-item"><button class="delete-btn" onclick="deleteGrowthLog('${plot.id}', '${log.id}')" title="ลบ">×</button><div class="growth-header"><span class="growth-day">📅 วันที่ ${log.day}</span><span class="growth-date">${formatDate(log.date)}</span></div><div class="growth-tags">${log.height ? `<span class="growth-tag height">📏 ${log.height} ซม.</span>` : ''}${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}</div></div>`).join('')}</div>`;
-  
-  const logEntries = Object.entries(plot.dailyLogs || {}).slice().reverse().slice(0, 7);
-  html += `<div class="card"><h2>📋 กิจกรรม 7 วัน</h2>${logEntries.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : logEntries.map(([date, logs]) => `<div style="background:#f5f5f5;padding:8px;border-radius:8px;margin-bottom:6px;"><div style="font-size:0.75em;font-weight:600;color:#555;margin-bottom:4px;">${new Date(date).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })}</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${logs.water_am ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#e3f2fd;color:#1565c0;">💧เช้า</span>` : ''}${logs.water_pm ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#e3f2fd;color:#1565c0;">💧เย็น</span>` : ''}${logs.em ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#fff3e0;color:#e65100;">🦠EM</span>` : ''}${logs.tricho ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#e8f5e9;color:#2e7d32;">🍄ไตรโค</span>` : ''}${logs.check ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#fffde7;color:#f9a825;">🔍ตรวจ</span>` : ''}${logs.photo ? `<span style="padding:2px 6px;border-radius:6px;font-size:0.6em;background:#f3e5f5;color:#7b1fa2;">📸</span>` : ''}</div></div>`).join('')}</div>`;
+  html += `<div class="card ${isHydro ? 'hydro' : ''}"><h2>📊 ประวัติ (${logs.length})</h2>${logs.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : logs.slice().reverse().map(log => `<div class="growth-item"><button class="delete-btn" onclick="deleteGrowthLog('${plot.id}', '${log.id}')" title="ลบ">×</button><div class="growth-header"><span class="growth-day">📅 วันที่ ${log.day}</span><span class="growth-date">${formatDate(log.date)}</span></div><div class="growth-tags">${log.height ? `<span class="growth-tag height">📏 ${log.height} ซม.</span>` : ''}${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}${log.ec ? `<span class="growth-tag ec">EC ${log.ec}</span>` : ''}${log.ph ? `<span class="growth-tag ph">pH ${log.ph}</span>` : ''}${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}</div></div>`).join('')}</div>`;
   
   $('recordContent').innerHTML = html;
 }
 
 function renderGuide() {
-  let html = `<div class="card"><h2>📖 คู่มือสารชีวภัณฑ์</h2>${Object.entries(bioProducts).map(([key, bio]) => `<div class="bio-accordion bio-${bio.color}" onclick="this.classList.toggle('open')" style="border-color:currentColor;"><div class="bio-accordion-header"><div class="info"><span class="icon">${bio.icon}</span><div><div class="name">${bio.name}</div><div class="fullname">${bio.fullName}</div></div></div><span class="arrow">▼</span></div><div class="bio-accordion-body" onclick="event.stopPropagation()"><div class="bio-info-box"><b>📏 อัตราส่วน:</b> ${bio.ratio}</div><div class="bio-info-box"><b>⏰ เมื่อไหร่:</b> ${bio.when}</div><div class="bio-info-box"><b>📝 วิธีใช้:</b> ${bio.how}</div><div class="bio-info-box"><b>✅ ประโยชน์:</b><ul>${bio.benefits.map(b => `<li>${b}</li>`).join('')}</ul></div><div class="bio-info-box"><b>💡 เคล็ดลับ:</b> ${bio.tips}</div><div class="bio-info-box"><b>📦 การเก็บ:</b> ${bio.storage}</div></div></div>`).join('')}</div>`;
+  let html = `<div class="tabs">
+    <button class="tab-btn ${guideTab === 'organic' ? 'active' : ''}" onclick="guideTab='organic';renderGuide()">🌱 อินทรีย์</button>
+    <button class="tab-btn hydro ${guideTab === 'hydro' ? 'active' : ''}" onclick="guideTab='hydro';renderGuide()">💧 ไฮโดรโปนิกส์</button>
+  </div>`;
   
-  html += `<div class="warning-box"><h3>⚠️ ข้อควรระวัง</h3><ul><li><span>❌</span> ห้ามใช้ชีวภัณฑ์กำจัดแมลงกับสารเคมีกำจัดเชื้อรา</li><li><span>❌</span> ไตรโค + บิวเวอเรีย ไม่ควรผสมกัน</li><li><span>✅</span> บิวเวอเรีย + เมตาไรเซียม ใช้ด้วยกันได้</li><li><span>🌅</span> ฉีดพ่นช่วงเย็นหรือเช้าตรู่</li><li><span>❄️</span> เก็บในที่เย็น อายุ 3-6 เดือน</li><li><span>⏸️</span> หยุดฉีดก่อนเก็บ 3-5 วัน</li></ul></div>`;
-  
-  html += `<div class="schedule-table"><h3>📋 ตารางการใช้</h3><div class="schedule-row"><span class="time">ก่อนปลูก 7 วัน</span><span class="action">EM + ไตรโค</span></div><div class="schedule-row"><span class="time">วันปลูก</span><span class="action">คลุกเมล็ดไตรโค</span></div><div class="schedule-row"><span class="time">ทุก 5-7 วัน</span><span class="action">EM + ไตรโค</span></div><div class="schedule-row"><span class="time">ทุก 7-10 วัน</span><span class="action">ฮอร์โมน</span></div><div class="schedule-row"><span class="time">พบแมลง</span><span class="action">บิวเวอเรีย/เมตา</span></div><div class="schedule-row"><span class="time">ก่อนเก็บ 3-5 วัน</span><span class="action" style="color:#c62828;">หยุดทุกอย่าง</span></div></div>`;
-  
-  $('guideContent').innerHTML = html;
-}
-
-// ==================== PDF Export ====================
-async function exportPDF(plotId) {
-  const plot = plots.find(p => p.id === plotId);
-  if (!plot) return;
-  
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 20;
-  
-  const addText = (text, size = 12) => { if (y > 280) { doc.addPage(); y = 20; } doc.setFontSize(size); doc.text(text, 20, y); y += 8; };
-  
-  addText(`Organic Vegetable Report`, 18);
-  addText(`Plot: ${plot.name}`, 14);
-  addText(`Vegetable: ${plot.veggie.name}`, 12);
-  addText(`Start: ${formatDate(plot.startDate)}`, 12);
-  addText(`Harvest: ${formatDate(addDays(new Date(plot.startDate), plot.veggie.days))}`, 12);
-  y += 4;
-  
-  const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(new Date(plot.startDate), -7)) / (plot.veggie.days + 7)) * 100)));
-  const tasksDone = Object.values(plot.completedTasks || {}).filter(Boolean).length;
-  addText(`Progress: ${pct}%`, 14);
-  addText(`Tasks Done: ${tasksDone}`, 12);
-  y += 4;
-  
-  const logs = plot.growthLogs || [];
-  if (logs.length) {
-    addText(`Growth Records (${logs.length})`, 14);
-    logs.forEach(log => {
-      let t = `Day ${log.day}: `;
-      if (log.height) t += `H:${log.height}cm `;
-      if (log.leaves) t += `L:${log.leaves} `;
-      if (log.problem) t += `[${log.problem}]`;
-      addText(t, 10);
-    });
-    y += 4;
+  if (guideTab === 'organic') {
+    html += `<div class="card"><h2>📖 คู่มือสารชีวภัณฑ์</h2>${Object.entries(bioProducts).map(([key, bio]) => `<div class="bio-accordion bio-${bio.color}" onclick="this.classList.toggle('open')" style="border-color:currentColor;"><div class="bio-accordion-header"><div class="info"><span class="icon">${bio.icon}</span><div><div class="name">${bio.name}</div><div class="fullname">${bio.fullName}</div></div></div><span class="arrow">▼</span></div><div class="bio-accordion-body" onclick="event.stopPropagation()"><div class="bio-info-box"><b>📏 อัตราส่วน:</b> ${bio.ratio}</div><div class="bio-info-box"><b>⏰ เมื่อไหร่:</b> ${bio.when}</div><div class="bio-info-box"><b>✅ ประโยชน์:</b><ul>${bio.benefits.map(b => `<li>${b}</li>`).join('')}</ul></div></div></div>`).join('')}</div>`;
+    
+    html += `<div class="warning-box"><h3>⚠️ ข้อควรระวัง</h3><ul>
+      <li><span>❌</span> ไตรโค + บิวเวอเรีย ไม่ควรผสมกัน</li>
+      <li><span>✅</span> บิวเวอเรีย + เมตาไรเซียม ใช้ด้วยกันได้</li>
+      <li><span>🌅</span> ฉีดพ่นช่วงเย็นหรือเช้าตรู่</li>
+      <li><span>⏸️</span> หยุดฉีดก่อนเก็บ 3-5 วัน</li>
+    </ul></div>`;
+  } else {
+    html += `<div class="card hydro"><h2>💧 ระบบไฮโดรโปนิกส์</h2>${Object.entries(hydroSystems).map(([key, sys]) => `<div class="bio-accordion" style="border-color:#90caf9;" onclick="this.classList.toggle('open')"><div class="bio-accordion-header"><div class="info"><span class="icon">${sys.icon}</span><div><div class="name">${sys.name}</div><div class="fullname">${sys.fullName}</div></div></div><span class="arrow">▼</span></div><div class="bio-accordion-body" onclick="event.stopPropagation()"><div class="bio-info-box"><b>📝 คำอธิบาย:</b> ${sys.desc}</div><div class="bio-info-box"><b>✅ ข้อดี:</b><ul>${sys.pros.map(p => `<li>${p}</li>`).join('')}</ul></div><div class="bio-info-box"><b>⚠️ ข้อเสีย:</b><ul>${sys.cons.map(c => `<li>${c}</li>`).join('')}</ul></div></div></div>`).join('')}</div>`;
+    
+    html += `<div class="card hydro"><h2>📊 ค่า EC/pH แนะนำ</h2>
+      <div class="nutrient-guide" style="background:#fff;">
+        ${Object.values(hydroNutrients).map(n => `<div class="nutrient-row"><span><b>${n.stage}</b> (วัน ${n.days})</span><span>EC: ${n.ec} | pH: ${n.ph}</span></div>`).join('')}
+      </div>
+    </div>`;
+    
+    html += `<div class="card hydro"><h2>🧪 วิธีผสมสารละลาย A-B</h2>
+      <div class="bio-info-box"><b>1. เตรียมน้ำ:</b> น้ำประปาพัก 24 ชม. หรือ น้ำ RO</div>
+      <div class="bio-info-box"><b>2. ผสมสาร A ก่อน:</b> คนให้ละลายหมด</div>
+      <div class="bio-info-box"><b>3. ผสมสาร B:</b> ห้ามผสม A+B เข้มข้นโดยตรง!</div>
+      <div class="bio-info-box"><b>4. ตรวจ EC:</b> ปรับตามระยะการเติบโต</div>
+      <div class="bio-info-box"><b>5. ปรับ pH:</b> ใช้กรด/ด่างปรับให้ได้ 5.5-6.5</div>
+    </div>`;
+    
+    html += `<div class="tip-box"><h3>💡 เคล็ดลับไฮโดร</h3><ul>
+      <li><span>🌡️</span> อุณหภูมิน้ำ 18-25°C ดีที่สุด</li>
+      <li><span>🔄</span> เปลี่ยนน้ำทุก 7-14 วัน</li>
+      <li><span>💨</span> รากต้องการออกซิเจน (ยกเว้น Kratky)</li>
+      <li><span>🧹</span> ล้างระบบทุกรอบปลูก</li>
+      <li><span>📊</span> วัด EC/pH ทุกวัน หรือวันเว้นวัน</li>
+    </ul></div>`;
   }
   
-  addText(`Timeline`, 14);
-  plot.phases.forEach((p, i) => { addText(`${i + 1}. ${p.name} - ${formatDate(p.date)} (${getPhaseCompletion(plot, p)}%)`, 10); });
-  
-  doc.setFontSize(8);
-  doc.text(`Generated: ${new Date().toLocaleString('th-TH')}`, 20, 285);
-  doc.save(`${plot.name}-report.pdf`);
+  $('guideContent').innerHTML = html;
 }
 
 // ==================== Init ====================
@@ -591,7 +733,7 @@ document.addEventListener('DOMContentLoaded', () => {
     firebase.initializeApp(firebaseConfig);
     db = firebase.database();
     updateSyncBadge('syncing', '🔄 กำลังโหลด...');
-    loadFromFirebase();
+    loadData();
   } catch (e) {
     updateSyncBadge('error', '❌ เชื่อมต่อล้มเหลว');
     console.error(e);
