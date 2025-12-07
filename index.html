@@ -313,6 +313,16 @@ const bioProducts = {
   hormone: { name: 'ฮอร์โมนพืช', icon: '🌿', color: 'hormone', fullName: 'ฮอร์โมนผลไม้/ยอดพืช', ratio: '4-5 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 7-10 วัน หลังย้ายปลูก', how: 'ฉีดพ่นทั่วทั้งต้น ช่วงเช้าหรือเย็น', benefits: ['เร่งการเจริญเติบโต', 'ช่วยผักอวบ หวานกรอบ', 'เพิ่มผลผลิต', 'ใบเขียวสวย'], tips: 'ทำเองได้: มะละกอ+ฟักทอง+กล้วย+EM+กากน้ำตาล หมัก 7-8 วัน', storage: 'เก็บในขวดปิดสนิท อายุ 3 เดือน' }
 };
 
+const firebaseConfig = {
+  apiKey: "AIzaSyDVnLYb27BPs_RM-YY6ASBgkYAiKSPMULM",
+  authDomain: "organic-vegetable-planting.firebaseapp.com",
+  databaseURL: "https://organic-vegetable-planting-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "organic-vegetable-planting",
+  storageBucket: "organic-vegetable-planting.firebasestorage.app",
+  messagingSenderId: "384351483160",
+  appId: "1:384351483160:web:008a9797fcd2e9f7819a6d"
+};
+
 let db = null, plan = null, completedTasks = {}, dailyLogs = {}, growthLogs = [], notes = '';
 const $ = id => document.getElementById(id);
 const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
@@ -562,10 +572,17 @@ function renderGuide() {
 document.addEventListener('DOMContentLoaded', () => {
   $('startDate').valueAsDate = new Date();
   renderGuide();
-  const saved = null; // Could load from localStorage for demo
-  if (!saved) {
+  // Auto-connect to Firebase
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    updateStatus('✅ เชื่อมต่อ Firebase สำเร็จ!', 'connected');
+    $('configSection').classList.add('hidden');
+    $('mainApp').classList.remove('hidden');
+    loadData();
+  } catch (e) {
+    updateStatus('❌ เชื่อมต่อไม่สำเร็จ: ' + e.message, 'error');
     $('configSection').classList.remove('hidden');
-    updateStatus('⚙️ กรุณาตั้งค่า Firebase Config', '');
   }
 });
 </script>
