@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>บันทึกการปลูกผักอินทรีย์</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-app-compat.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/9.23.0/firebase-database-compat.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Sarabun', 'Segoe UI', sans-serif; background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); min-height: 100vh; padding: 8px; }
@@ -23,27 +25,23 @@
     select:focus, input:focus, textarea:focus { border-color: #4caf50; }
     .btn { background: linear-gradient(135deg, #66bb6a, #43a047); color: white; border: none; padding: 12px; border-radius: 12px; font-size: 0.85em; font-weight: bold; cursor: pointer; width: 100%; transition: all 0.3s; }
     .btn:hover { box-shadow: 0 4px 15px rgba(76,175,80,0.4); transform: translateY(-1px); }
+    .btn:disabled { background: #ccc; cursor: not-allowed; transform: none; }
     .btn-sm { padding: 8px 12px; font-size: 0.75em; width: auto; }
+    .btn-danger { background: linear-gradient(135deg, #ef5350, #c62828); }
     .hidden { display: none !important; }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    
-    /* Status Card */
     .status-card { background: linear-gradient(135deg, #ffd54f, #ff9800); border-radius: 16px; padding: 14px; color: white; margin-bottom: 10px; }
     .status-card h2 { color: white; margin-bottom: 4px; }
     .status-card p { font-size: 0.8em; opacity: 0.9; }
     .status-badges { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
     .status-badge { background: rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 12px; font-size: 0.7em; }
-    
-    /* Phase Card */
     .phase-card { border-left: 4px solid #4caf50; }
     .phase-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .phase-title { font-weight: bold; color: #2e7d32; font-size: 0.95em; }
     .phase-badge { background: #4caf50; color: white; padding: 3px 10px; border-radius: 12px; font-size: 0.65em; animation: pulse 2s infinite; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
     .phase-desc { color: #666; font-size: 0.8em; margin-bottom: 10px; }
-    
-    /* Bio Tags */
     .bio-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
     .bio-tag { padding: 4px 10px; border-radius: 12px; font-size: 0.7em; cursor: pointer; border: 1px solid; transition: all 0.2s; }
     .bio-tag:hover { transform: scale(1.05); }
@@ -52,26 +50,18 @@
     .bio-beau { background: #fce4ec; color: #c2185b; border-color: #f8bbd9; }
     .bio-meta { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
     .bio-hormone { background: #f3e5f5; color: #7b1fa2; border-color: #ce93d8; }
-    
-    /* Bio Detail */
     .bio-detail { padding: 10px; border-radius: 10px; margin-bottom: 10px; font-size: 0.75em; }
     .bio-detail h4 { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .bio-detail .close { cursor: pointer; color: #999; }
-    
-    /* Checklist */
     .checklist { list-style: none; }
     .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; margin-bottom: 4px; background: #f5f5f5; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 0.8em; }
     .checklist li:hover { background: #e8f5e9; }
     .checklist li.done { background: #c8e6c9; }
     .checklist li.done span { text-decoration: line-through; color: #888; }
     .checklist input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; accent-color: #4caf50; flex-shrink: 0; }
-    
-    /* Progress Bar */
     .progress-wrap { background: #e0e0e0; border-radius: 10px; height: 8px; margin-top: 8px; overflow: hidden; }
     .progress-bar { height: 100%; background: linear-gradient(90deg, #81c784, #4caf50); transition: width 0.5s; }
     .progress-text { display: flex; justify-content: space-between; font-size: 0.7em; color: #666; margin-top: 4px; }
-    
-    /* Quick Log Buttons */
     .quick-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
     .quick-btn { padding: 12px 6px; border: none; border-radius: 12px; cursor: pointer; background: #f0f0f0; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .quick-btn:hover { background: #e0e0e0; }
@@ -79,18 +69,12 @@
     .quick-btn .icon { font-size: 1.3em; }
     .quick-btn .label { font-size: 0.65em; font-weight: 600; }
     .quick-btn .time { font-size: 0.55em; opacity: 0.8; }
-    
-    /* Next Phase */
     .next-phase { background: #e3f2fd; border-left: 4px solid #2196f3; }
     .next-phase h3 { color: #1565c0; }
-    
-    /* Tips */
     .tips { background: #fffde7; border-radius: 12px; padding: 12px; }
     .tips h3 { color: #f9a825; margin-bottom: 8px; font-size: 0.85em; }
     .tips ul { list-style: none; font-size: 0.75em; }
     .tips li { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 6px; color: #555; }
-    
-    /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
     .stat-box { background: #f5f5f5; padding: 10px 6px; border-radius: 12px; }
     .stat-box.green { background: #e8f5e9; }
@@ -99,8 +83,6 @@
     .stat-box.orange { background: #fff3e0; }
     .stat-value { font-size: 1.4em; font-weight: bold; color: #333; }
     .stat-label { font-size: 0.55em; color: #888; }
-    
-    /* Timeline */
     .timeline-item { display: flex; gap: 10px; margin-bottom: 8px; }
     .timeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7em; font-weight: bold; flex-shrink: 0; }
     .timeline-dot.done { background: #4caf50; color: white; }
@@ -115,8 +97,6 @@
     .timeline-percent { float: right; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; }
     .timeline-percent.complete { background: #4caf50; color: white; }
     .timeline-percent.partial { background: #ffe082; color: #333; }
-    
-    /* Growth Log */
     .growth-item { background: #f5f5f5; padding: 10px; border-radius: 10px; margin-bottom: 6px; }
     .growth-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
     .growth-day { font-weight: bold; color: #2e7d32; font-size: 0.85em; }
@@ -126,8 +106,6 @@
     .growth-tag.height { background: #e3f2fd; color: #1565c0; }
     .growth-tag.leaves { background: #e8f5e9; color: #2e7d32; }
     .growth-tag.problem { background: #ffebee; color: #c62828; }
-    
-    /* Bio Accordion */
     .bio-accordion { border: 2px solid; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
     .bio-accordion-header { padding: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
     .bio-accordion-header .info { display: flex; align-items: center; gap: 8px; }
@@ -141,22 +119,16 @@
     .bio-info-box { background: rgba(255,255,255,0.5); padding: 8px; border-radius: 8px; margin-bottom: 6px; font-size: 0.75em; }
     .bio-info-box b { display: block; margin-bottom: 2px; }
     .bio-info-box ul { margin: 0; padding-left: 16px; }
-    
-    /* Warning Box */
     .warning-box { background: #ffebee; border: 2px solid #ef9a9a; border-radius: 12px; padding: 12px; }
     .warning-box h3 { color: #c62828; font-size: 0.85em; margin-bottom: 8px; }
     .warning-box ul { list-style: none; font-size: 0.75em; }
     .warning-box li { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
-    
-    /* Schedule Table */
     .schedule-table { background: #e8f5e9; border-radius: 12px; padding: 12px; }
     .schedule-table h3 { color: #2e7d32; font-size: 0.85em; margin-bottom: 8px; }
     .schedule-row { display: flex; justify-content: space-between; padding: 8px; background: white; border-radius: 8px; margin-bottom: 4px; font-size: 0.75em; }
     .schedule-row .time { color: #666; }
     .schedule-row .action { font-weight: 600; color: #2e7d32; }
     .schedule-row .action.red { color: #c62828; }
-    
-    /* Veggie Info */
     .veggie-info { display: flex; gap: 10px; align-items: flex-start; }
     .veggie-icon { font-size: 2.5em; }
     .veggie-details { flex: 1; }
@@ -165,8 +137,6 @@
     .veggie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
     .veggie-stat { background: #f5f5f5; padding: 6px 8px; border-radius: 8px; font-size: 0.7em; }
     .veggie-tip { font-size: 0.75em; color: #43a047; margin-top: 8px; }
-    
-    /* Plan Summary */
     .plan-summary { background: linear-gradient(135deg, #4caf50, #2e7d32); border-radius: 16px; padding: 14px; color: white; }
     .plan-summary .header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .plan-summary .icon { font-size: 2.5em; }
@@ -176,19 +146,23 @@
     .plan-progress .bar { height: 10px; background: rgba(255,255,255,0.3); border-radius: 5px; overflow: hidden; }
     .plan-progress .fill { height: 100%; background: white; transition: width 0.5s; }
     .plan-progress .text { display: flex; justify-content: space-between; font-size: 0.7em; margin-top: 4px; }
-    
-    /* Empty State */
     .empty-state { text-align: center; padding: 40px 20px; }
     .empty-state .icon { font-size: 3em; margin-bottom: 10px; }
     .empty-state p { color: #888; margin-bottom: 10px; }
-    
-    /* Activity Log */
     .activity-day { background: #f5f5f5; padding: 8px; border-radius: 8px; margin-bottom: 6px; }
     .activity-day .date { font-size: 0.75em; font-weight: 600; color: #555; margin-bottom: 4px; }
     .activity-tags { display: flex; flex-wrap: wrap; gap: 4px; }
     .activity-tag { padding: 2px 6px; border-radius: 6px; font-size: 0.6em; }
-    
+    .firebase-status { background: #fff3e0; border: 2px solid #ffcc80; border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+    .firebase-status.connected { background: #e8f5e9; border-color: #a5d6a7; }
+    .firebase-status.error { background: #ffebee; border-color: #ef9a9a; }
+    .firebase-status h3 { font-size: 0.85em; margin-bottom: 8px; }
+    .firebase-status p { font-size: 0.75em; color: #666; }
+    .loading { text-align: center; padding: 40px; }
+    .loading .spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #4caf50; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .footer { text-align: center; font-size: 0.6em; color: #4caf50; padding: 10px 0; }
+    .config-input { font-family: monospace; font-size: 0.7em; height: 150px; }
   </style>
 </head>
 <body>
@@ -196,111 +170,117 @@
     <h1>🌱 บันทึกการปลูกผักอินทรีย์</h1>
     <p class="subtitle">สำหรับนักเรียนน้อย เรียนรู้การปลูกผักปลอดสารพิษ</p>
     
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab active" onclick="showTab('planner')">📋 วางแผน</button>
-      <button class="tab" onclick="showTab('today')">📅 วันนี้</button>
-      <button class="tab" onclick="showTab('progress')">📊 ความคืบหน้า</button>
-      <button class="tab" onclick="showTab('record')">📝 บันทึก</button>
-      <button class="tab" onclick="showTab('guide')">📖 คู่มือ</button>
+    <div id="firebaseStatus" class="firebase-status">
+      <h3>🔥 สถานะ Firebase</h3>
+      <p id="statusText">กำลังเชื่อมต่อ...</p>
     </div>
     
-    <!-- TAB: PLANNER -->
-    <div id="planner" class="tab-content active">
-      <div class="card">
-        <h2>🌱 เริ่มต้นปลูกผัก</h2>
-        <div class="form-row">
-          <div class="form-group">
-            <label>ประเภทผัก</label>
-            <select id="category" onchange="updateVeggieOptions()">
-              <option value="">เลือก...</option>
-              <option value="salad">🥗 ผักสลัด</option>
-              <option value="thai">🌿 ผักไทย</option>
-            </select>
+    <div id="configSection" class="card hidden">
+      <h2>⚙️ ตั้งค่า Firebase</h2>
+      <p style="font-size:0.75em;color:#666;margin-bottom:10px;">กรุณาใส่ Firebase Config จาก Firebase Console ของคุณ</p>
+      <div class="form-group">
+        <label>Firebase Config (JSON)</label>
+        <textarea id="firebaseConfig" class="config-input" placeholder='{
+  "apiKey": "YOUR_API_KEY",
+  "authDomain": "YOUR_PROJECT.firebaseapp.com",
+  "databaseURL": "https://YOUR_PROJECT.firebaseio.com",
+  "projectId": "YOUR_PROJECT",
+  "storageBucket": "YOUR_PROJECT.appspot.com",
+  "messagingSenderId": "123456789",
+  "appId": "YOUR_APP_ID"
+}'></textarea>
+      </div>
+      <button class="btn" onclick="initFirebase()">🚀 เชื่อมต่อ Firebase</button>
+    </div>
+    
+    <div id="mainApp" class="hidden">
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('planner', this)">📋 วางแผน</button>
+        <button class="tab" onclick="showTab('today', this)">📅 วันนี้</button>
+        <button class="tab" onclick="showTab('progress', this)">📊 ความคืบหน้า</button>
+        <button class="tab" onclick="showTab('record', this)">📝 บันทึก</button>
+        <button class="tab" onclick="showTab('guide', this)">📖 คู่มือ</button>
+      </div>
+      
+      <div id="planner" class="tab-content active">
+        <div class="card">
+          <h2>🌱 เริ่มต้นปลูกผัก</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>ประเภทผัก</label>
+              <select id="category" onchange="updateVeggieOptions()">
+                <option value="">เลือก...</option>
+                <option value="salad">🥗 ผักสลัด</option>
+                <option value="thai">🌿 ผักไทย</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ชนิดผัก</label>
+              <select id="veggieType" onchange="showVeggieInfo()">
+                <option value="">เลือก...</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label>ชนิดผัก</label>
-            <select id="veggieType" onchange="showVeggieInfo()">
-              <option value="">เลือก...</option>
-            </select>
+            <label>📅 วันเริ่มปลูก</label>
+            <input type="date" id="startDate">
+          </div>
+          <button class="btn" onclick="generatePlan()">🚀 สร้างแผนการปลูก!</button>
+        </div>
+        
+        <div id="veggieInfoCard" class="card hidden">
+          <div class="veggie-info">
+            <div class="veggie-icon" id="vInfoIcon"></div>
+            <div class="veggie-details">
+              <div class="veggie-name" id="vInfoName"></div>
+              <div class="veggie-desc" id="vInfoDesc"></div>
+              <div class="veggie-grid" id="vInfoGrid"></div>
+              <div class="veggie-tip" id="vInfoTip"></div>
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label>📅 วันเริ่มปลูก</label>
-          <input type="date" id="startDate">
-        </div>
-        <button class="btn" onclick="generatePlan()">🚀 สร้างแผนการปลูก!</button>
-      </div>
-      
-      <div id="veggieInfoCard" class="card hidden">
-        <div class="veggie-info">
-          <div class="veggie-icon" id="vInfoIcon"></div>
-          <div class="veggie-details">
-            <div class="veggie-name" id="vInfoName"></div>
-            <div class="veggie-desc" id="vInfoDesc"></div>
-            <div class="veggie-grid" id="vInfoGrid"></div>
-            <div class="veggie-tip" id="vInfoTip"></div>
+        
+        <div id="planSummaryCard" class="plan-summary hidden">
+          <div class="header">
+            <div class="icon" id="planIcon"></div>
+            <div>
+              <div class="title" id="planTitle"></div>
+              <div class="dates" id="planDates"></div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div id="planSummaryCard" class="plan-summary hidden">
-        <div class="header">
-          <div class="icon" id="planIcon"></div>
-          <div>
-            <div class="title" id="planTitle"></div>
-            <div class="dates" id="planDates"></div>
+          <div class="plan-progress">
+            <div class="bar"><div class="fill" id="planProgressBar"></div></div>
+            <div class="text"><span>ความคืบหน้า</span><span id="planProgressText">0%</span></div>
           </div>
-        </div>
-        <div class="plan-progress">
-          <div class="bar"><div class="fill" id="planProgressBar"></div></div>
-          <div class="text"><span>ความคืบหน้า</span><span id="planProgressText">0%</span></div>
+          <button class="btn btn-danger btn-sm" style="margin-top:10px;" onclick="deletePlan()">🗑️ ลบแผนการปลูก</button>
         </div>
       </div>
-    </div>
-    
-    <!-- TAB: TODAY -->
-    <div id="today" class="tab-content">
-      <div id="todayContent"></div>
-    </div>
-    
-    <!-- TAB: PROGRESS -->
-    <div id="progress" class="tab-content">
-      <div id="progressContent"></div>
-    </div>
-    
-    <!-- TAB: RECORD -->
-    <div id="record" class="tab-content">
-      <div id="recordContent"></div>
-    </div>
-    
-    <!-- TAB: GUIDE -->
-    <div id="guide" class="tab-content">
-      <div class="card">
-        <h2>📖 คู่มือสารชีวภัณฑ์</h2>
-        <div id="bioGuideContent"></div>
-      </div>
       
-      <div class="warning-box">
-        <h3>⚠️ ข้อควรระวัง</h3>
-        <ul>
-          <li><span>❌</span> ห้ามใช้สารชีวภัณฑ์กำจัดแมลงร่วมกับสารเคมีกำจัดเชื้อรา</li>
-          <li><span>❌</span> ไตรโคเดอร์มา + บิวเวอเรีย ไม่ควรผสมฉีดพร้อมกัน</li>
-          <li><span>✅</span> บิวเวอเรีย + เมตาไรเซียม ผสมใช้ด้วยกันได้</li>
-          <li><span>🌅</span> ฉีดพ่นช่วงเย็นหรือเช้าตรู่เท่านั้น (แสงแดดทำลายเชื้อ)</li>
-          <li><span>❄️</span> เก็บสารชีวภัณฑ์ในที่เย็น อายุ 3-6 เดือน</li>
-          <li><span>⏸️</span> หยุดฉีดก่อนเก็บเกี่ยว 3-5 วัน</li>
-        </ul>
-      </div>
-      
-      <div class="schedule-table">
-        <h3>📋 ตารางการใช้สารชีวภัณฑ์</h3>
-        <div class="schedule-row"><span class="time">ก่อนปลูก 7 วัน</span><span class="action">EM + ไตรโคเดอร์มา</span></div>
-        <div class="schedule-row"><span class="time">วันปลูก</span><span class="action">คลุกเมล็ดไตรโคเดอร์มา</span></div>
-        <div class="schedule-row"><span class="time">ทุก 5-7 วัน</span><span class="action">EM + ไตรโคเดอร์มา</span></div>
-        <div class="schedule-row"><span class="time">ทุก 7-10 วัน</span><span class="action">ฮอร์โมนพืช</span></div>
-        <div class="schedule-row"><span class="time">เมื่อพบแมลง</span><span class="action">บิวเวอเรีย / เมตาไรเซียม</span></div>
-        <div class="schedule-row"><span class="time">ก่อนเก็บ 3-5 วัน</span><span class="action red">หยุดทุกอย่าง</span></div>
+      <div id="today" class="tab-content"><div id="todayContent"></div></div>
+      <div id="progress" class="tab-content"><div id="progressContent"></div></div>
+      <div id="record" class="tab-content"><div id="recordContent"></div></div>
+      <div id="guide" class="tab-content">
+        <div class="card"><h2>📖 คู่มือสารชีวภัณฑ์</h2><div id="bioGuideContent"></div></div>
+        <div class="warning-box">
+          <h3>⚠️ ข้อควรระวัง</h3>
+          <ul>
+            <li><span>❌</span> ห้ามใช้สารชีวภัณฑ์กำจัดแมลงร่วมกับสารเคมีกำจัดเชื้อรา</li>
+            <li><span>❌</span> ไตรโคเดอร์มา + บิวเวอเรีย ไม่ควรผสมฉีดพร้อมกัน</li>
+            <li><span>✅</span> บิวเวอเรีย + เมตาไรเซียม ผสมใช้ด้วยกันได้</li>
+            <li><span>🌅</span> ฉีดพ่นช่วงเย็นหรือเช้าตรู่เท่านั้น</li>
+            <li><span>❄️</span> เก็บสารชีวภัณฑ์ในที่เย็น อายุ 3-6 เดือน</li>
+            <li><span>⏸️</span> หยุดฉีดก่อนเก็บเกี่ยว 3-5 วัน</li>
+          </ul>
+        </div>
+        <div class="schedule-table">
+          <h3>📋 ตารางการใช้สารชีวภัณฑ์</h3>
+          <div class="schedule-row"><span class="time">ก่อนปลูก 7 วัน</span><span class="action">EM + ไตรโคเดอร์มา</span></div>
+          <div class="schedule-row"><span class="time">วันปลูก</span><span class="action">คลุกเมล็ดไตรโคเดอร์มา</span></div>
+          <div class="schedule-row"><span class="time">ทุก 5-7 วัน</span><span class="action">EM + ไตรโคเดอร์มา</span></div>
+          <div class="schedule-row"><span class="time">ทุก 7-10 วัน</span><span class="action">ฮอร์โมนพืช</span></div>
+          <div class="schedule-row"><span class="time">เมื่อพบแมลง</span><span class="action">บิวเวอเรีย / เมตาไรเซียม</span></div>
+          <div class="schedule-row"><span class="time">ก่อนเก็บ 3-5 วัน</span><span class="action red">หยุดทุกอย่าง</span></div>
+        </div>
       </div>
     </div>
     
@@ -308,7 +288,6 @@
   </div>
 
 <script>
-// ===== DATA =====
 const saladVeggies = {
   greenoak: { name: 'กรีนโอ๊ค', icon: '🥬', days: 45, germDays: 3, desc: 'ใบสีเขียวอ่อน รสกรอบอร่อย', tips: 'ชอบแดดรำไร รดน้ำสม่ำเสมอ', water: 'วันละ 2 ครั้ง', light: 'แดดรำไร 4-6 ชม.' },
   redoak: { name: 'เรดโอ๊ค', icon: '🥗', days: 45, germDays: 3, desc: 'ใบสีแดงเข้ม อุดมวิตามิน', tips: 'ต้องการแสงแดดเพื่อให้สีแดงสวย', water: 'วันละ 2 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
@@ -316,7 +295,6 @@ const saladVeggies = {
   cos: { name: 'กรีนคอส', icon: '🥗', days: 55, germDays: 4, desc: 'ใบยาวกรอบ ทำซีซาร์สลัด', tips: 'ทนแดดได้ดี ต้องการน้ำมาก', water: 'วันละ 2-3 ครั้ง', light: 'แดดจัด 5-7 ชม.' },
   filley: { name: 'ฟิลเลย์', icon: '🌿', days: 40, germDays: 3, desc: 'ใบหยัก โตเร็ว ปลูกง่าย', tips: 'เหมาะสำหรับมือใหม่', water: 'วันละ 2 ครั้ง', light: 'แดดรำไร 4-5 ชม.' }
 };
-
 const thaiVeggies = {
   kana: { name: 'คะน้า', icon: '🥬', days: 50, germDays: 4, desc: 'ผักยอดนิยม วิตามินสูง', tips: 'ปลูกได้ตลอดปี ชอบดินร่วน', water: 'วันละ 2 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
   pakbung: { name: 'ผักบุ้งจีน', icon: '🌿', days: 25, germDays: 3, desc: 'โตเร็วมาก ปลูกง่าย', tips: 'แช่เมล็ดก่อนปลูก 12 ชม.', water: 'วันละ 2-3 ครั้ง', light: 'แดดจัด 5-6 ชม.' },
@@ -327,7 +305,6 @@ const thaiVeggies = {
   tonhom: { name: 'ต้นหอม', icon: '🌱', days: 35, germDays: 5, desc: 'ใช้พื้นที่น้อย โตเร็ว', tips: 'ปลูกจากหัวหอมได้', water: 'วันละ 1-2 ครั้ง', light: 'แดดรำไร 4-5 ชม.' },
   phak: { name: 'ผักปลัง', icon: '🌿', days: 30, germDays: 4, desc: 'ใบลื่น ต้มจืดอร่อย', tips: 'ชอบความชื้น โตเร็วในหน้าฝน', water: 'วันละ 2-3 ครั้ง', light: 'แดดรำไร 4-5 ชม.' }
 };
-
 const bioProducts = {
   em: { name: 'EM จุลินทรีย์', icon: '🦠', color: 'em', fullName: 'Effective Microorganisms', ratio: '1 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 5-7 วัน ตลอดการปลูก', how: 'ผสมน้ำแล้วรดราดที่โคนต้นและใบ', benefits: ['ปรับสภาพดินให้ร่วนซุย', 'ย่อยสลายอินทรียวัตถุ', 'ช่วยพืชดูดซึมธาตุอาหาร', 'ป้องกันโรคในดิน'], tips: 'ราดดินก่อนปลูก 7 วัน ช่วยเตรียมดินให้พร้อม', storage: 'เก็บที่อุณหภูมิ 25-45°C ได้ 6 เดือน' },
   tricho: { name: 'ไตรโคเดอร์มา', icon: '🍄', color: 'tricho', fullName: 'Trichoderma', ratio: '25 กรัม : น้ำ 20 ลิตร', when: 'ทุก 5-7 วัน ฉีดช่วงเย็น', how: 'ฉีดพ่นที่ใบ กิ่ง ลำต้น และราดโคนต้น', benefits: ['ป้องกันโรครากเน่า-โคนเน่า', 'ป้องกันโรคเน่าคอดิน', 'ป้องกันโรคใบไหม้ใบจุด', 'กระตุ้นภูมิคุ้มกันพืช'], tips: 'คลุกเมล็ด 10 กรัม:เมล็ด 1 กก. ก่อนปลูก', storage: 'เก็บในตู้เย็นได้ 1 ปี อุณหภูมิห้อง 6 เดือน' },
@@ -336,128 +313,156 @@ const bioProducts = {
   hormone: { name: 'ฮอร์โมนพืช', icon: '🌿', color: 'hormone', fullName: 'ฮอร์โมนผลไม้/ยอดพืช', ratio: '4-5 ช้อนโต๊ะ : น้ำ 10 ลิตร', when: 'ทุก 7-10 วัน หลังย้ายปลูก', how: 'ฉีดพ่นทั่วทั้งต้น ช่วงเช้าหรือเย็น', benefits: ['เร่งการเจริญเติบโต', 'ช่วยผักอวบ หวานกรอบ', 'เพิ่มผลผลิต', 'ใบเขียวสวย'], tips: 'ทำเองได้: มะละกอ+ฟักทอง+กล้วย+EM+กากน้ำตาล หมัก 7-8 วัน', storage: 'เก็บในขวดปิดสนิท อายุ 3 เดือน' }
 };
 
-// ===== STATE =====
-let plan = null;
-let completedTasks = {};
-let dailyLogs = {};
-let growthLogs = [];
-let notes = '';
-
-// ===== HELPERS =====
+let db = null, plan = null, completedTasks = {}, dailyLogs = {}, growthLogs = [], notes = '';
 const $ = id => document.getElementById(id);
-const addDays = (date, days) => { const r = new Date(date); r.setDate(r.getDate() + days); return r; };
-const formatDate = date => date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-const formatDateFull = date => date.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-const getDaysDiff = (d1, d2) => Math.floor((d1 - d2) / (1000 * 60 * 60 * 24));
+const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+const formatDate = d => d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+const formatDateFull = d => d.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+const getDaysDiff = (d1, d2) => Math.floor((d1 - d2) / 86400000);
 const today = new Date(); today.setHours(0,0,0,0);
 const todayKey = today.toISOString().split('T')[0];
 
-// ===== TAB FUNCTIONS =====
-function showTab(tabId) {
+function updateStatus(msg, type = '') {
+  const el = $('firebaseStatus');
+  el.className = 'firebase-status ' + type;
+  $('statusText').textContent = msg;
+}
+
+function initFirebase() {
+  try {
+    const config = JSON.parse($('firebaseConfig').value);
+    if (!config.databaseURL) throw new Error('ต้องมี databaseURL');
+    firebase.initializeApp(config);
+    db = firebase.database();
+    updateStatus('✅ เชื่อมต่อ Firebase สำเร็จ!', 'connected');
+    $('configSection').classList.add('hidden');
+    $('mainApp').classList.remove('hidden');
+    loadData();
+  } catch (e) {
+    updateStatus('❌ เชื่อมต่อไม่สำเร็จ: ' + e.message, 'error');
+  }
+}
+
+function loadData() {
+  db.ref('veggie-tracker').on('value', snap => {
+    const data = snap.val() || {};
+    if (data.plan) {
+      plan = data.plan;
+      plan.startDate = new Date(plan.startDate);
+      plan.phases = plan.phases.map(p => ({ ...p, date: new Date(p.date) }));
+      showPlanSummary();
+    }
+    completedTasks = data.completedTasks || {};
+    dailyLogs = data.dailyLogs || {};
+    growthLogs = data.growthLogs || [];
+    notes = data.notes || '';
+    renderCurrentTab();
+  });
+}
+
+function saveData() {
+  if (!db) return;
+  const data = {
+    plan: plan ? { ...plan, startDate: plan.startDate.toISOString(), phases: plan.phases.map(p => ({ ...p, date: p.date.toISOString() })) } : null,
+    completedTasks, dailyLogs, growthLogs, notes
+  };
+  db.ref('veggie-tracker').set(data);
+}
+
+function showTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   $(tabId).classList.add('active');
-  event.target.classList.add('active');
-  if (tabId === 'today') renderToday();
-  if (tabId === 'progress') renderProgress();
-  if (tabId === 'record') renderRecord();
-  if (tabId === 'guide') renderGuide();
+  btn.classList.add('active');
+  renderCurrentTab();
 }
 
-// ===== PLANNER =====
+function renderCurrentTab() {
+  const active = document.querySelector('.tab-content.active');
+  if (active?.id === 'today') renderToday();
+  if (active?.id === 'progress') renderProgress();
+  if (active?.id === 'record') renderRecord();
+  if (active?.id === 'guide') renderGuide();
+}
+
 function updateVeggieOptions() {
   const cat = $('category').value;
   const sel = $('veggieType');
   sel.innerHTML = '<option value="">เลือก...</option>';
   const data = cat === 'salad' ? saladVeggies : cat === 'thai' ? thaiVeggies : {};
-  Object.entries(data).forEach(([k, v]) => {
-    sel.innerHTML += `<option value="${k}">${v.icon} ${v.name}</option>`;
-  });
+  Object.entries(data).forEach(([k, v]) => sel.innerHTML += `<option value="${k}">${v.icon} ${v.name}</option>`);
   $('veggieInfoCard').classList.add('hidden');
 }
 
 function showVeggieInfo() {
-  const cat = $('category').value;
-  const type = $('veggieType').value;
+  const cat = $('category').value, type = $('veggieType').value;
   if (!type) { $('veggieInfoCard').classList.add('hidden'); return; }
-  const data = cat === 'salad' ? saladVeggies : thaiVeggies;
-  const v = data[type];
+  const v = (cat === 'salad' ? saladVeggies : thaiVeggies)[type];
   $('vInfoIcon').textContent = v.icon;
   $('vInfoName').textContent = v.name;
   $('vInfoDesc').textContent = v.desc;
-  $('vInfoGrid').innerHTML = `
-    <div class="veggie-stat">⏱️ ระยะเวลา: ${v.days} วัน</div>
-    <div class="veggie-stat">🌱 งอก: ${v.germDays} วัน</div>
-    <div class="veggie-stat">💧 น้ำ: ${v.water}</div>
-    <div class="veggie-stat">☀️ แสง: ${v.light}</div>
-  `;
+  $('vInfoGrid').innerHTML = `<div class="veggie-stat">⏱️ ${v.days} วัน</div><div class="veggie-stat">🌱 งอก ${v.germDays} วัน</div><div class="veggie-stat">💧 ${v.water}</div><div class="veggie-stat">☀️ ${v.light}</div>`;
   $('vInfoTip').innerHTML = `💡 ${v.tips}`;
   $('veggieInfoCard').classList.remove('hidden');
 }
 
 function generatePlan() {
-  const cat = $('category').value;
-  const type = $('veggieType').value;
-  const startDateStr = $('startDate').value;
-  if (!cat || !type || !startDateStr) { alert('กรุณาเลือกประเภทผัก ชนิดผัก และวันเริ่มปลูก'); return; }
-  
-  const data = cat === 'salad' ? saladVeggies : thaiVeggies;
-  const veggie = data[type];
+  const cat = $('category').value, type = $('veggieType').value, startDateStr = $('startDate').value;
+  if (!cat || !type || !startDateStr) { alert('กรุณาเลือกให้ครบ'); return; }
+  const veggie = (cat === 'salad' ? saladVeggies : thaiVeggies)[type];
   const start = new Date(startDateStr);
-  
   const phases = [
-    { id: 'prep', day: -7, name: '🔧 เตรียมดิน', desc: 'พรวนดิน ผสมปุ๋ยคอก ราด EM หมัก 7 วัน', bio: ['em', 'tricho'], tasks: ['พรวนดินให้ร่วนซุย ลึก 15-20 ซม.', 'ผสมดิน:ปุ๋ยคอก:ขุยมะพร้าว = 2:1:1', 'ราด EM 1 ช้อนโต๊ะ:น้ำ 10 ลิตร', 'โรยไตรโคเดอร์มาผสมปุ๋ยหมัก', 'คลุมด้วยฟาง', 'รอหมัก 7 วัน'] },
-    { id: 'plant', day: 0, name: '🌱 วันปลูก', desc: 'คลุกเมล็ดด้วยไตรโคเดอร์มา หยอดเมล็ด', bio: ['tricho'], tasks: ['คลุกเมล็ดด้วยไตรโคเดอร์มา', 'หยอดเมล็ดลึก 0.5-1 ซม.', 'กลบดินบางๆ', 'รดน้ำพอชุ่ม', 'วางในที่ร่ม', 'ติดป้ายชื่อผัก'] },
-    { id: 'germ', day: veggie.germDays, name: '🌿 เมล็ดงอก', desc: 'ต้นกล้าเริ่มโผล่ ย้ายรับแสง', bio: ['em'], tasks: ['ตรวจดูต้นกล้าที่งอก', 'นับจำนวนต้นที่งอก', 'ย้ายไปที่มีแสงรำไร', 'รดน้ำผสม EM', 'ถ่ายรูปบันทึก 📸'] },
-    { id: 'care1', day: 7, name: '💧 ดูแลสัปดาห์ที่ 1', desc: 'รด EM ครั้งแรก ฉีดไตรโค', bio: ['em', 'tricho'], tasks: ['รดน้ำเช้า-เย็นทุกวัน', 'รด EM 1:1000', 'ฉีดไตรโคเดอร์มาช่วงเย็น', 'วัดความสูงต้นกล้า', 'ตรวจหาแมลง'] },
-    { id: 'hormone1', day: 10, name: '🌿 ให้ฮอร์โมนครั้งแรก', desc: 'ฉีดฮอร์โมนผลไม้เร่งใบ', bio: ['hormone'], tasks: ['เตรียมฮอร์โมนพืช', 'ฉีดพ่นทั่วทั้งต้น', 'บันทึกความสูง', 'ถ่ายรูปเปรียบเทียบ'] },
-    { id: 'transplant', day: 14, name: '🪴 ย้ายปลูก', desc: 'ย้ายต้นกล้าลงแปลง', bio: ['tricho'], tasks: ['เตรียมหลุมปลูก', 'ใส่ไตรโคเดอร์มารองก้นหลุม', 'ย้ายต้นกล้า เว้นระยะ 15-20 ซม.', 'รดน้ำให้ชุ่ม', 'พรางแสงถ้าแดดจัด'] },
-    { id: 'pest', day: 17, name: '🦟 ตรวจแมลง', desc: 'ตรวจศัตรูพืช ฉีดชีวภัณฑ์ถ้าพบ', bio: ['beauveria', 'metarhizium'], tasks: ['ตรวจใต้ใบหาเพลี้ย', 'ตรวจหาหนอน รอยกัดแทะ', 'ถ้าพบเพลี้ย → ฉีดบิวเวอเรีย', 'ถ้าพบด้วง/หนอน → ฉีดเมตาไรเซียม'] },
-    { id: 'care2', day: 21, name: '💧 ดูแลสัปดาห์ที่ 3', desc: 'รด EM + ไตรโค รอบที่ 2', bio: ['em', 'tricho'], tasks: ['รด EM ทุก 5-7 วัน', 'ฉีดไตรโคเดอร์มา', 'พรวนดินเบาๆ', 'กำจัดวัชพืช', 'บันทึกความสูง'] },
-    { id: 'hormone2', day: 25, name: '🌿 ฮอร์โมนรอบ 2', desc: 'ฉีดฮอร์โมน พรวนดิน', bio: ['hormone'], tasks: ['ฉีดฮอร์โมนพืช', 'พรวนดินเบาๆ', 'ตรวจสอบโรคพืช', 'ถ่ายรูปความก้าวหน้า'] },
-    { id: 'grow', day: Math.floor(veggie.days * 0.8), name: '🥬 ใกล้เก็บเกี่ยว', desc: 'ต้นโตเต็มที่ ดูแลต่อเนื่อง', bio: ['tricho'], tasks: ['ตรวจสอบศัตรูพืช', 'รด EM ครั้งสุดท้าย', 'ถ่ายรูปต้นโตเต็มที่', 'เตรียมอุปกรณ์เก็บเกี่ยว'] },
-    { id: 'stop', day: veggie.days - 5, name: '⏸️ หยุดชีวภัณฑ์', desc: 'หยุดฉีดก่อนเก็บ 3-5 วัน', bio: [], tasks: ['หยุดฉีดสารชีวภัณฑ์ทั้งหมด', 'รดน้ำเปล่าอย่างเดียว', 'เตรียมตะกร้า/ถุง', 'วางแผนวันเก็บเกี่ยว'] },
-    { id: 'harvest', day: veggie.days, name: '🎉 เก็บเกี่ยว!', desc: 'เก็บผักสด ล้างสะอาด พร้อมทาน!', bio: [], tasks: ['รดน้ำก่อนเก็บให้ชุ่ม', 'เก็บผักตอนเช้า', 'ตัดที่โคนต้น', 'ล้างน้ำสะอาด', 'ชั่งน้ำหนักผลผลิต', 'ถ่ายรูปความสำเร็จ! 📸🎊'] }
+    { id: 'prep', day: -7, name: '🔧 เตรียมดิน', desc: 'พรวนดิน ผสมปุ๋ยคอก ราด EM หมัก 7 วัน', bio: ['em', 'tricho'], tasks: ['พรวนดินให้ร่วนซุย', 'ผสมดิน:ปุ๋ยคอก:ขุยมะพร้าว = 2:1:1', 'ราด EM 1:10 ลิตร', 'โรยไตรโคเดอร์มา', 'คลุมด้วยฟาง', 'รอหมัก 7 วัน'] },
+    { id: 'plant', day: 0, name: '🌱 วันปลูก', desc: 'คลุกเมล็ดด้วยไตรโคเดอร์มา', bio: ['tricho'], tasks: ['คลุกเมล็ดด้วยไตรโค', 'หยอดเมล็ด', 'กลบดินบางๆ', 'รดน้ำพอชุ่ม', 'วางในที่ร่ม', 'ติดป้ายชื่อ'] },
+    { id: 'germ', day: veggie.germDays, name: '🌿 เมล็ดงอก', desc: 'ต้นกล้าเริ่มโผล่', bio: ['em'], tasks: ['ตรวจต้นกล้า', 'นับจำนวนต้น', 'ย้ายรับแสง', 'รดน้ำผสม EM', 'ถ่ายรูป 📸'] },
+    { id: 'care1', day: 7, name: '💧 ดูแลสัปดาห์ 1', desc: 'รด EM ฉีดไตรโค', bio: ['em', 'tricho'], tasks: ['รดน้ำเช้า-เย็น', 'รด EM', 'ฉีดไตรโคช่วงเย็น', 'วัดความสูง', 'ตรวจแมลง'] },
+    { id: 'hormone1', day: 10, name: '🌿 ฮอร์โมนครั้งแรก', desc: 'ฉีดฮอร์โมนเร่งใบ', bio: ['hormone'], tasks: ['เตรียมฮอร์โมน', 'ฉีดทั่วต้น', 'บันทึกความสูง', 'ถ่ายรูป'] },
+    { id: 'transplant', day: 14, name: '🪴 ย้ายปลูก', desc: 'ย้ายต้นกล้าลงแปลง', bio: ['tricho'], tasks: ['เตรียมหลุม', 'ใส่ไตรโครองก้นหลุม', 'ย้ายต้นกล้า', 'รดน้ำชุ่ม', 'พรางแสง'] },
+    { id: 'pest', day: 17, name: '🦟 ตรวจแมลง', desc: 'ฉีดชีวภัณฑ์ถ้าพบ', bio: ['beauveria', 'metarhizium'], tasks: ['ตรวจใต้ใบ', 'ตรวจหาหนอน', 'ฉีดบิวเวอเรีย', 'ฉีดเมตาไรเซียม'] },
+    { id: 'care2', day: 21, name: '💧 ดูแลสัปดาห์ 3', desc: 'รด EM + ไตรโค รอบ 2', bio: ['em', 'tricho'], tasks: ['รด EM ทุก 5-7 วัน', 'ฉีดไตรโค', 'พรวนดิน', 'กำจัดวัชพืช', 'บันทึกความสูง'] },
+    { id: 'hormone2', day: 25, name: '🌿 ฮอร์โมนรอบ 2', desc: 'ฉีดฮอร์โมน พรวนดิน', bio: ['hormone'], tasks: ['ฉีดฮอร์โมน', 'พรวนดิน', 'ตรวจโรค', 'ถ่ายรูป'] },
+    { id: 'grow', day: Math.floor(veggie.days * 0.8), name: '🥬 ใกล้เก็บเกี่ยว', desc: 'ต้นโตเต็มที่', bio: ['tricho'], tasks: ['ตรวจศัตรูพืช', 'รด EM สุดท้าย', 'ถ่ายรูป', 'เตรียมอุปกรณ์'] },
+    { id: 'stop', day: veggie.days - 5, name: '⏸️ หยุดชีวภัณฑ์', desc: 'หยุดฉีดก่อนเก็บ', bio: [], tasks: ['หยุดฉีดทั้งหมด', 'รดน้ำเปล่า', 'เตรียมตะกร้า', 'วางแผนเก็บเกี่ยว'] },
+    { id: 'harvest', day: veggie.days, name: '🎉 เก็บเกี่ยว!', desc: 'เก็บผักสด!', bio: [], tasks: ['รดน้ำก่อนเก็บ', 'เก็บตอนเช้า', 'ตัดที่โคน', 'ล้างสะอาด', 'ชั่งน้ำหนัก', 'ถ่ายรูป 🎊'] }
   ];
-  
-  plan = {
-    veggie,
-    startDate: start,
-    phases: phases.map(p => ({ ...p, date: addDays(start, p.day) }))
-  };
-  completedTasks = {};
-  growthLogs = [];
-  
-  // Show summary
-  $('planIcon').textContent = veggie.icon;
-  $('planTitle').textContent = veggie.name;
-  $('planDates').innerHTML = `เริ่ม ${formatDateFull(start)}<br>เก็บเกี่ยว ${formatDateFull(addDays(start, veggie.days))}`;
+  plan = { veggie, startDate: start, phases: phases.map(p => ({ ...p, date: addDays(start, p.day) })) };
+  completedTasks = {}; growthLogs = [];
+  showPlanSummary();
+  saveData();
+  showTab('today', document.querySelectorAll('.tab')[1]);
+}
+
+function showPlanSummary() {
+  if (!plan) return;
+  $('planIcon').textContent = plan.veggie.icon;
+  $('planTitle').textContent = plan.veggie.name;
+  $('planDates').innerHTML = `เริ่ม ${formatDateFull(plan.startDate)}<br>เก็บเกี่ยว ${formatDateFull(addDays(plan.startDate, plan.veggie.days))}`;
   updatePlanProgress();
   $('planSummaryCard').classList.remove('hidden');
-  
-  showTab('today');
-  document.querySelector('.tab:nth-child(2)').classList.add('active');
-  document.querySelector('.tab:nth-child(1)').classList.remove('active');
 }
 
 function updatePlanProgress() {
   if (!plan) return;
-  const total = plan.veggie.days + 7;
-  const passed = getDaysDiff(today, addDays(plan.startDate, -7));
+  const total = plan.veggie.days + 7, passed = getDaysDiff(today, addDays(plan.startDate, -7));
   const pct = Math.min(100, Math.max(0, Math.round((passed / total) * 100)));
   $('planProgressBar').style.width = pct + '%';
   $('planProgressText').textContent = pct + '%';
 }
 
+function deletePlan() {
+  if (!confirm('ต้องการลบแผนการปลูกนี้?')) return;
+  plan = null; completedTasks = {}; dailyLogs = {}; growthLogs = []; notes = '';
+  $('planSummaryCard').classList.add('hidden');
+  saveData();
+}
+
 function getCurrentPhase() {
   if (!plan) return null;
-  const sorted = [...plan.phases].sort((a, b) => b.date - a.date);
-  return sorted.find(p => p.date <= today) || plan.phases[0];
+  return [...plan.phases].sort((a, b) => b.date - a.date).find(p => p.date <= today) || plan.phases[0];
 }
 
 function getNextPhase() {
-  if (!plan) return null;
-  return plan.phases.find(p => p.date > today);
+  return plan?.phases.find(p => p.date > today);
 }
 
 function getPhaseCompletion(phase) {
@@ -468,345 +473,100 @@ function getPhaseCompletion(phase) {
 function toggleTask(phaseId, taskIdx) {
   const key = `${phaseId}-${taskIdx}`;
   completedTasks[key] = !completedTasks[key];
-  renderToday();
-  renderProgress();
+  saveData();
 }
 
 function logDaily(type) {
   if (!dailyLogs[todayKey]) dailyLogs[todayKey] = {};
   dailyLogs[todayKey][type] = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-  renderToday();
+  saveData();
 }
 
-// ===== RENDER TODAY =====
 function renderToday() {
   if (!plan) {
-    $('todayContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแผนการปลูก</p><button class="btn btn-sm" onclick="showTab('planner')">👉 ไปสร้างแผน</button></div>`;
+    $('todayContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแผน</p><button class="btn btn-sm" onclick="showTab('planner', document.querySelector('.tab'))">👉 สร้างแผน</button></div>`;
     return;
   }
-  
-  const current = getCurrentPhase();
-  const next = getNextPhase();
+  const current = getCurrentPhase(), next = getNextPhase();
   const dayNum = getDaysDiff(today, plan.startDate) + 1;
   const daysLeft = Math.max(0, getDaysDiff(addDays(plan.startDate, plan.veggie.days), today));
   const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(plan.startDate, -7)) / (plan.veggie.days + 7)) * 100)));
   const todayLog = dailyLogs[todayKey] || {};
   
-  let html = `
-    <div class="status-card">
-      <h2>📅 ${formatDateFull(today)}</h2>
-      <p>วันที่ ${dayNum} ของการปลูก ${plan.veggie.name} ${plan.veggie.icon}</p>
-      <div class="status-badges">
-        <span class="status-badge">เหลืออีก ${daysLeft} วัน</span>
-        <span class="status-badge">${pct}% เสร็จแล้ว</span>
-      </div>
-    </div>
-  `;
+  let html = `<div class="status-card"><h2>📅 ${formatDateFull(today)}</h2><p>วันที่ ${dayNum} ของการปลูก ${plan.veggie.name} ${plan.veggie.icon}</p><div class="status-badges"><span class="status-badge">เหลืออีก ${daysLeft} วัน</span><span class="status-badge">${pct}% เสร็จ</span></div></div>`;
   
   if (current) {
-    const completion = getPhaseCompletion(current);
-    html += `
-      <div class="card phase-card">
-        <div class="phase-header">
-          <span class="phase-title">${current.name}</span>
-          <span class="phase-badge">🎯 ตอนนี้</span>
-        </div>
-        <p class="phase-desc">${current.desc}</p>
-        ${current.bio.length > 0 ? `
-          <div class="bio-tags">
-            <span style="font-size:0.7em;color:#888;margin-right:4px;">ใช้:</span>
-            ${current.bio.map(b => `<span class="bio-tag bio-${bioProducts[b].color}" onclick="showBioPopup('${b}')">${bioProducts[b].icon} ${bioProducts[b].name}</span>`).join('')}
-          </div>
-        ` : ''}
-        <div id="bioPopup"></div>
-        <p style="font-size:0.8em;font-weight:600;color:#555;margin-bottom:8px;">📝 สิ่งที่ต้องทำ (${current.tasks.filter((_, i) => completedTasks[`${current.id}-${i}`]).length}/${current.tasks.length}):</p>
-        <ul class="checklist">
-          ${current.tasks.map((t, i) => `
-            <li class="${completedTasks[`${current.id}-${i}`] ? 'done' : ''}" onclick="toggleTask('${current.id}', ${i})">
-              <input type="checkbox" ${completedTasks[`${current.id}-${i}`] ? 'checked' : ''}>
-              <span>${t}</span>
-            </li>
-          `).join('')}
-        </ul>
-        <div class="progress-wrap"><div class="progress-bar" style="width:${completion}%"></div></div>
-        <div class="progress-text"><span>ทำไปแล้ว</span><span>${completion}%</span></div>
-      </div>
-    `;
+    const comp = getPhaseCompletion(current);
+    html += `<div class="card phase-card"><div class="phase-header"><span class="phase-title">${current.name}</span><span class="phase-badge">🎯 ตอนนี้</span></div><p class="phase-desc">${current.desc}</p>${current.bio.length ? `<div class="bio-tags"><span style="font-size:0.7em;color:#888;margin-right:4px;">ใช้:</span>${current.bio.map(b => `<span class="bio-tag bio-${bioProducts[b].color}">${bioProducts[b].icon} ${bioProducts[b].name}</span>`).join('')}</div>` : ''}<p style="font-size:0.8em;font-weight:600;color:#555;margin-bottom:8px;">📝 สิ่งที่ต้องทำ (${current.tasks.filter((_, i) => completedTasks[`${current.id}-${i}`]).length}/${current.tasks.length}):</p><ul class="checklist">${current.tasks.map((t, i) => `<li class="${completedTasks[`${current.id}-${i}`] ? 'done' : ''}" onclick="toggleTask('${current.id}', ${i})"><input type="checkbox" ${completedTasks[`${current.id}-${i}`] ? 'checked' : ''}><span>${t}</span></li>`).join('')}</ul><div class="progress-wrap"><div class="progress-bar" style="width:${comp}%"></div></div><div class="progress-text"><span>ทำไปแล้ว</span><span>${comp}%</span></div></div>`;
   }
   
-  html += `
-    <div class="card">
-      <h2>⚡ บันทึกด่วนวันนี้</h2>
-      <div class="quick-btns">
-        ${[
-          { id: 'water_am', icon: '💧', label: 'รดน้ำเช้า' },
-          { id: 'water_pm', icon: '💧', label: 'รดน้ำเย็น' },
-          { id: 'check', icon: '🔍', label: 'ตรวจต้นไม้' },
-          { id: 'em', icon: '🦠', label: 'ให้ EM' },
-          { id: 'tricho', icon: '🍄', label: 'ฉีดไตรโค' },
-          { id: 'photo', icon: '📸', label: 'ถ่ายรูป' }
-        ].map(item => `
-          <button class="quick-btn ${todayLog[item.id] ? 'done' : ''}" onclick="logDaily('${item.id}')">
-            <span class="icon">${item.icon}</span>
-            <span class="label">${item.label}</span>
-            ${todayLog[item.id] ? `<span class="time">✓ ${todayLog[item.id]}</span>` : ''}
-          </button>
-        `).join('')}
-      </div>
-    </div>
-  `;
+  html += `<div class="card"><h2>⚡ บันทึกด่วนวันนี้</h2><div class="quick-btns">${[{id:'water_am',icon:'💧',label:'รดน้ำเช้า'},{id:'water_pm',icon:'💧',label:'รดน้ำเย็น'},{id:'check',icon:'🔍',label:'ตรวจต้นไม้'},{id:'em',icon:'🦠',label:'ให้ EM'},{id:'tricho',icon:'🍄',label:'ฉีดไตรโค'},{id:'photo',icon:'📸',label:'ถ่ายรูป'}].map(item => `<button class="quick-btn ${todayLog[item.id] ? 'done' : ''}" onclick="logDaily('${item.id}')"><span class="icon">${item.icon}</span><span class="label">${item.label}</span>${todayLog[item.id] ? `<span class="time">✓ ${todayLog[item.id]}</span>` : ''}</button>`).join('')}</div></div>`;
   
-  if (next) {
-    html += `
-      <div class="card next-phase">
-        <h3>⏭️ ขั้นตอนถัดไป</h3>
-        <p style="font-size:0.85em;color:#333;">${next.name}</p>
-        <p style="font-size:0.75em;color:#1565c0;">📅 ${formatDate(next.date)} (อีก ${getDaysDiff(next.date, today)} วัน)</p>
-        ${next.bio.length > 0 ? `
-          <div class="bio-tags" style="margin-top:8px;">
-            <span style="font-size:0.65em;color:#888;">เตรียม:</span>
-            ${next.bio.map(b => `<span class="bio-tag bio-${bioProducts[b].color}">${bioProducts[b].icon} ${bioProducts[b].name}</span>`).join('')}
-          </div>
-        ` : ''}
-      </div>
-    `;
-  }
+  if (next) html += `<div class="card next-phase"><h3>⏭️ ขั้นตอนถัดไป</h3><p style="font-size:0.85em;color:#333;">${next.name}</p><p style="font-size:0.75em;color:#1565c0;">📅 ${formatDate(next.date)} (อีก ${getDaysDiff(next.date, today)} วัน)</p></div>`;
   
-  html += `
-    <div class="tips">
-      <h3>💡 คำแนะนำวันนี้</h3>
-      <ul>
-        <li><span>💧</span> รดน้ำให้ชุ่มแต่อย่าให้แฉะจนน้ำขัง</li>
-        <li><span>🔍</span> ตรวจใต้ใบหาแมลงศัตรูพืชทุกวัน</li>
-        ${current?.bio.includes('em') ? '<li><span>🦠</span> ผสม EM รดน้ำ (1 ช้อนโต๊ะ:น้ำ 10 ลิตร)</li>' : ''}
-        ${current?.bio.includes('tricho') ? '<li><span>🍄</span> ฉีดไตรโคเดอร์มาช่วงเย็น</li>' : ''}
-        ${current?.bio.includes('hormone') ? '<li><span>🌿</span> ฉีดฮอร์โมนพืชช่วยเร่งใบ</li>' : ''}
-      </ul>
-    </div>
-  `;
-  
-  html += `
-    <div class="card">
-      <h2>📝 บันทึกของฉัน</h2>
-      <textarea placeholder="เขียนสิ่งที่สังเกตเห็นวันนี้..." style="height:70px;" onchange="notes=this.value">${notes}</textarea>
-    </div>
-  `;
+  html += `<div class="tips"><h3>💡 คำแนะนำวันนี้</h3><ul><li><span>💧</span> รดน้ำให้ชุ่มแต่อย่าให้แฉะ</li><li><span>🔍</span> ตรวจใต้ใบหาแมลงทุกวัน</li></ul></div>`;
   
   $('todayContent').innerHTML = html;
 }
 
-function showBioPopup(bioKey) {
-  const bio = bioProducts[bioKey];
-  const popup = $('bioPopup');
-  if (popup.innerHTML.includes(bio.name)) {
-    popup.innerHTML = '';
-    return;
-  }
-  popup.innerHTML = `
-    <div class="bio-detail bio-${bio.color}" style="border:2px solid;">
-      <h4>${bio.icon} ${bio.name} <span class="close" onclick="$('bioPopup').innerHTML=''">✕</span></h4>
-      <p><b>อัตราส่วน:</b> ${bio.ratio}</p>
-      <p><b>วิธีใช้:</b> ${bio.how}</p>
-    </div>
-  `;
-}
-
-// ===== RENDER PROGRESS =====
 function renderProgress() {
   if (!plan) {
-    $('progressContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแผนการปลูก</p><button class="btn btn-sm" onclick="showTab('planner')">👉 ไปสร้างแผน</button></div>`;
+    $('progressContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแผน</p></div>`;
     return;
   }
-  
   const dayNum = Math.max(1, getDaysDiff(today, plan.startDate) + 1);
   const daysLeft = Math.max(0, getDaysDiff(addDays(plan.startDate, plan.veggie.days), today));
   const pct = Math.min(100, Math.max(0, Math.round((getDaysDiff(today, addDays(plan.startDate, -7)) / (plan.veggie.days + 7)) * 100)));
   const tasksDone = Object.values(completedTasks).filter(Boolean).length;
   const current = getCurrentPhase();
   
-  let html = `
-    <div class="card">
-      <h2>📈 สรุปผลงาน</h2>
-      <div class="stats-grid">
-        <div class="stat-box green"><div class="stat-value">${dayNum}</div><div class="stat-label">วันที่ปลูก</div></div>
-        <div class="stat-box blue"><div class="stat-value">${tasksDone}</div><div class="stat-label">งานเสร็จ</div></div>
-        <div class="stat-box purple"><div class="stat-value">${daysLeft}</div><div class="stat-label">วันเหลือ</div></div>
-        <div class="stat-box orange"><div class="stat-value">${pct}%</div><div class="stat-label">คืบหน้า</div></div>
-      </div>
-    </div>
-    
-    <div class="card">
-      <h2>📊 ไทม์ไลน์การปลูก</h2>
-      ${plan.phases.map((phase, idx) => {
-        const isPast = phase.date < today;
-        const isCurrent = current?.id === phase.id;
-        const completion = getPhaseCompletion(phase);
-        return `
-          <div class="timeline-item">
-            <div class="timeline-dot ${isCurrent ? 'current' : isPast ? 'done' : 'future'}">${isPast && completion === 100 ? '✓' : idx + 1}</div>
-            <div class="timeline-content ${isCurrent ? 'current' : isPast ? 'done' : 'future'}">
-              <span class="timeline-title">${phase.name}</span>
-              ${(isPast || isCurrent) ? `<span class="timeline-percent ${completion === 100 ? 'complete' : 'partial'}">${completion}%</span>` : ''}
-              <div class="timeline-date">${formatDate(phase.date)}</div>
-              ${isCurrent ? '<div style="font-size:0.7em;color:#f9a825;margin-top:4px;">👈 กำลังทำอยู่</div>' : ''}
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+  let html = `<div class="card"><h2>📈 สรุปผลงาน</h2><div class="stats-grid"><div class="stat-box green"><div class="stat-value">${dayNum}</div><div class="stat-label">วันที่ปลูก</div></div><div class="stat-box blue"><div class="stat-value">${tasksDone}</div><div class="stat-label">งานเสร็จ</div></div><div class="stat-box purple"><div class="stat-value">${daysLeft}</div><div class="stat-label">วันเหลือ</div></div><div class="stat-box orange"><div class="stat-value">${pct}%</div><div class="stat-label">คืบหน้า</div></div></div></div>`;
   
-  if (growthLogs.length > 0) {
-    html += `
-      <div class="card">
-        <h2>📏 บันทึกการเจริญเติบโต</h2>
-        ${growthLogs.slice().reverse().map(log => `
-          <div class="growth-item">
-            <div class="growth-header">
-              <span class="growth-day">วันที่ ${log.day}</span>
-              <span class="growth-date">${formatDate(new Date(log.date))}</span>
-            </div>
-            <div class="growth-tags">
-              ${log.height ? `<span class="growth-tag height">📏 สูง ${log.height} ซม.</span>` : ''}
-              ${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}
-              ${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
+  html += `<div class="card"><h2>📊 ไทม์ไลน์</h2>${plan.phases.map((phase, idx) => {
+    const isPast = phase.date < today, isCurrent = current?.id === phase.id, comp = getPhaseCompletion(phase);
+    return `<div class="timeline-item"><div class="timeline-dot ${isCurrent ? 'current' : isPast ? 'done' : 'future'}">${isPast && comp === 100 ? '✓' : idx + 1}</div><div class="timeline-content ${isCurrent ? 'current' : isPast ? 'done' : 'future'}"><span class="timeline-title">${phase.name}</span>${(isPast || isCurrent) ? `<span class="timeline-percent ${comp === 100 ? 'complete' : 'partial'}">${comp}%</span>` : ''}<div class="timeline-date">${formatDate(phase.date)}</div>${isCurrent ? '<div style="font-size:0.7em;color:#f9a825;margin-top:4px;">👈 กำลังทำ</div>' : ''}</div></div>`;
+  }).join('')}</div>`;
+  
+  if (growthLogs.length) html += `<div class="card"><h2>📏 บันทึกการเจริญเติบโต</h2>${growthLogs.slice().reverse().map(log => `<div class="growth-item"><div class="growth-header"><span class="growth-day">วันที่ ${log.day}</span><span class="growth-date">${formatDate(new Date(log.date))}</span></div><div class="growth-tags">${log.height ? `<span class="growth-tag height">📏 ${log.height} ซม.</span>` : ''}${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}</div></div>`).join('')}</div>`;
   
   $('progressContent').innerHTML = html;
 }
 
-// ===== RENDER RECORD =====
 function renderRecord() {
   if (!plan) {
-    $('recordContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแผนการปลูก</p><button class="btn btn-sm" onclick="showTab('planner')">👉 ไปสร้างแผน</button></div>`;
+    $('recordContent').innerHTML = `<div class="empty-state"><div class="icon">🌱</div><p>ยังไม่มีแผน</p></div>`;
     return;
   }
-  
   const dayNum = getDaysDiff(today, plan.startDate) + 1;
+  let html = `<div class="card"><h2>📏 บันทึกการเจริญเติบโต</h2><p style="font-size:0.75em;color:#888;margin-bottom:10px;">วันที่ ${dayNum}</p><div class="form-row"><div class="form-group"><label>📏 ความสูง (ซม.)</label><input type="number" id="newHeight" placeholder="เช่น 5"></div><div class="form-group"><label>🍃 จำนวนใบ</label><input type="number" id="newLeaves" placeholder="เช่น 4"></div></div><div class="form-group"><label>⚠️ ปัญหาที่พบ</label><input type="text" id="problemLog" placeholder="เช่น พบเพลี้ย"></div><button class="btn" onclick="addGrowthLog()">➕ บันทึก</button></div>`;
   
-  let html = `
-    <div class="card">
-      <h2>📏 บันทึกการเจริญเติบโต</h2>
-      <p style="font-size:0.75em;color:#888;margin-bottom:10px;">วันที่ ${dayNum} ของการปลูก</p>
-      <div class="form-row">
-        <div class="form-group">
-          <label>📏 ความสูง (ซม.)</label>
-          <input type="number" id="newHeight" placeholder="เช่น 5">
-        </div>
-        <div class="form-group">
-          <label>🍃 จำนวนใบ</label>
-          <input type="number" id="newLeaves" placeholder="เช่น 4">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>⚠️ ปัญหาที่พบ (ถ้ามี)</label>
-        <input type="text" id="problemLog" placeholder="เช่น พบเพลี้ยใต้ใบ">
-      </div>
-      <button class="btn" onclick="addGrowthLog()">➕ บันทึก</button>
-    </div>
-    
-    <div class="card">
-      <h2>📊 ประวัติการบันทึก (${growthLogs.length} รายการ)</h2>
-      ${growthLogs.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;font-size:0.85em;">ยังไม่มีการบันทึก</p>' : 
-        growthLogs.slice().reverse().map(log => `
-          <div class="growth-item">
-            <div class="growth-header">
-              <span class="growth-day">📅 วันที่ ${log.day}</span>
-              <span class="growth-date">${formatDate(new Date(log.date))}</span>
-            </div>
-            <div class="growth-tags">
-              ${log.height ? `<span class="growth-tag height">📏 สูง ${log.height} ซม.</span>` : ''}
-              ${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}
-              ${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}
-            </div>
-          </div>
-        `).join('')
-      }
-    </div>
-    
-    <div class="card">
-      <h2>📋 กิจกรรมประจำวัน</h2>
-      ${Object.keys(dailyLogs).length === 0 ? '<p style="text-align:center;color:#999;padding:20px;font-size:0.85em;">ยังไม่มีการบันทึกกิจกรรม</p>' :
-        Object.entries(dailyLogs).slice().reverse().slice(0, 7).map(([date, logs]) => `
-          <div class="activity-day">
-            <div class="date">${new Date(date).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-            <div class="activity-tags">
-              ${logs.water_am ? `<span class="activity-tag" style="background:#e3f2fd;color:#1565c0;">💧เช้า ${logs.water_am}</span>` : ''}
-              ${logs.water_pm ? `<span class="activity-tag" style="background:#e3f2fd;color:#1565c0;">💧เย็น ${logs.water_pm}</span>` : ''}
-              ${logs.em ? `<span class="activity-tag" style="background:#fff3e0;color:#e65100;">🦠EM ${logs.em}</span>` : ''}
-              ${logs.tricho ? `<span class="activity-tag" style="background:#e8f5e9;color:#2e7d32;">🍄ไตรโค ${logs.tricho}</span>` : ''}
-              ${logs.check ? `<span class="activity-tag" style="background:#fffde7;color:#f9a825;">🔍ตรวจ ${logs.check}</span>` : ''}
-              ${logs.photo ? `<span class="activity-tag" style="background:#f3e5f5;color:#7b1fa2;">📸 ${logs.photo}</span>` : ''}
-            </div>
-          </div>
-        `).join('')
-      }
-    </div>
-  `;
+  html += `<div class="card"><h2>📊 ประวัติ (${growthLogs.length})</h2>${growthLogs.length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : growthLogs.slice().reverse().map(log => `<div class="growth-item"><div class="growth-header"><span class="growth-day">📅 วันที่ ${log.day}</span><span class="growth-date">${formatDate(new Date(log.date))}</span></div><div class="growth-tags">${log.height ? `<span class="growth-tag height">📏 ${log.height} ซม.</span>` : ''}${log.leaves ? `<span class="growth-tag leaves">🍃 ${log.leaves} ใบ</span>` : ''}${log.problem ? `<span class="growth-tag problem">⚠️ ${log.problem}</span>` : ''}</div></div>`).join('')}</div>`;
+  
+  html += `<div class="card"><h2>📋 กิจกรรมประจำวัน</h2>${Object.keys(dailyLogs).length === 0 ? '<p style="text-align:center;color:#999;padding:20px;">ยังไม่มี</p>' : Object.entries(dailyLogs).slice().reverse().slice(0, 7).map(([date, logs]) => `<div class="activity-day"><div class="date">${new Date(date).toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' })}</div><div class="activity-tags">${logs.water_am ? `<span class="activity-tag" style="background:#e3f2fd;color:#1565c0;">💧เช้า ${logs.water_am}</span>` : ''}${logs.water_pm ? `<span class="activity-tag" style="background:#e3f2fd;color:#1565c0;">💧เย็น ${logs.water_pm}</span>` : ''}${logs.em ? `<span class="activity-tag" style="background:#fff3e0;color:#e65100;">🦠EM ${logs.em}</span>` : ''}${logs.tricho ? `<span class="activity-tag" style="background:#e8f5e9;color:#2e7d32;">🍄ไตรโค ${logs.tricho}</span>` : ''}${logs.check ? `<span class="activity-tag" style="background:#fffde7;color:#f9a825;">🔍ตรวจ ${logs.check}</span>` : ''}${logs.photo ? `<span class="activity-tag" style="background:#f3e5f5;color:#7b1fa2;">📸 ${logs.photo}</span>` : ''}</div></div>`).join('')}</div>`;
   
   $('recordContent').innerHTML = html;
 }
 
 function addGrowthLog() {
-  const height = $('newHeight').value;
-  const leaves = $('newLeaves').value;
-  const problem = $('problemLog').value;
+  const height = $('newHeight').value, leaves = $('newLeaves').value, problem = $('problemLog').value;
   if (!height && !leaves) { alert('กรุณากรอกความสูงหรือจำนวนใบ'); return; }
-  
-  growthLogs.push({
-    date: new Date(),
-    day: getDaysDiff(today, plan.startDate) + 1,
-    height,
-    leaves,
-    problem
-  });
-  
-  $('newHeight').value = '';
-  $('newLeaves').value = '';
-  $('problemLog').value = '';
-  renderRecord();
-  renderProgress();
+  growthLogs.push({ date: new Date().toISOString(), day: getDaysDiff(today, plan.startDate) + 1, height, leaves, problem });
+  $('newHeight').value = ''; $('newLeaves').value = ''; $('problemLog').value = '';
+  saveData();
 }
 
-// ===== RENDER GUIDE =====
 function renderGuide() {
-  let html = '';
-  Object.entries(bioProducts).forEach(([key, bio]) => {
-    html += `
-      <div class="bio-accordion bio-${bio.color}" onclick="this.classList.toggle('open')" style="border-color: currentColor;">
-        <div class="bio-accordion-header">
-          <div class="info">
-            <span class="icon">${bio.icon}</span>
-            <div>
-              <div class="name">${bio.name}</div>
-              <div class="fullname">${bio.fullName}</div>
-            </div>
-          </div>
-          <span class="arrow">▼</span>
-        </div>
-        <div class="bio-accordion-body" onclick="event.stopPropagation()">
-          <div class="bio-info-box"><b>📏 อัตราส่วน:</b> ${bio.ratio}</div>
-          <div class="bio-info-box"><b>⏰ เมื่อไหร่:</b> ${bio.when}</div>
-          <div class="bio-info-box"><b>📝 วิธีใช้:</b> ${bio.how}</div>
-          <div class="bio-info-box"><b>✅ ประโยชน์:</b><ul>${bio.benefits.map(b => `<li>${b}</li>`).join('')}</ul></div>
-          <div class="bio-info-box"><b>💡 เคล็ดลับ:</b> ${bio.tips}</div>
-          <div class="bio-info-box"><b>📦 การเก็บรักษา:</b> ${bio.storage}</div>
-        </div>
-      </div>
-    `;
-  });
-  $('bioGuideContent').innerHTML = html;
+  $('bioGuideContent').innerHTML = Object.entries(bioProducts).map(([key, bio]) => `<div class="bio-accordion bio-${bio.color}" onclick="this.classList.toggle('open')" style="border-color:currentColor;"><div class="bio-accordion-header"><div class="info"><span class="icon">${bio.icon}</span><div><div class="name">${bio.name}</div><div class="fullname">${bio.fullName}</div></div></div><span class="arrow">▼</span></div><div class="bio-accordion-body" onclick="event.stopPropagation()"><div class="bio-info-box"><b>📏 อัตราส่วน:</b> ${bio.ratio}</div><div class="bio-info-box"><b>⏰ เมื่อไหร่:</b> ${bio.when}</div><div class="bio-info-box"><b>📝 วิธีใช้:</b> ${bio.how}</div><div class="bio-info-box"><b>✅ ประโยชน์:</b><ul>${bio.benefits.map(b => `<li>${b}</li>`).join('')}</ul></div><div class="bio-info-box"><b>💡 เคล็ดลับ:</b> ${bio.tips}</div><div class="bio-info-box"><b>📦 การเก็บ:</b> ${bio.storage}</div></div></div>`).join('');
 }
 
-// ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   $('startDate').valueAsDate = new Date();
   renderGuide();
+  const saved = null; // Could load from localStorage for demo
+  if (!saved) {
+    $('configSection').classList.remove('hidden');
+    updateStatus('⚙️ กรุณาตั้งค่า Firebase Config', '');
+  }
 });
 </script>
 </body>
